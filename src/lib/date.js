@@ -17,3 +17,54 @@ export function formatLongDate(date = new Date()) {
     month: 'long',
   }).format(date)
 }
+
+// --- Fälligkeits-Datum (gespeichert als 'YYYY-MM-DD') ---
+
+// Ein Date → 'YYYY-MM-DD' in lokaler Zeit (kein UTC-Versatz).
+export function toISODate(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// ISO-Datum, n Tage von heute aus (0 = heute, 1 = morgen …).
+export function isoInDays(n) {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return toISODate(d)
+}
+
+// Ganze Tage von heute bis zum Datum (negativ = Vergangenheit, null = keins).
+export function daysUntil(iso) {
+  if (!iso) return null
+  const [y, m, d] = iso.split('-').map(Number)
+  const target = new Date(y, m - 1, d)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  target.setHours(0, 0, 0, 0)
+  return Math.round((target - today) / 86_400_000)
+}
+
+// Freundliches Label für ein Fälligkeitsdatum.
+export function formatDueLabel(iso) {
+  if (!iso) return null
+  const diff = daysUntil(iso)
+  if (diff === 0) return 'Heute'
+  if (diff === 1) return 'Morgen'
+  if (diff === 2) return 'Übermorgen'
+  if (diff === -1) return 'Gestern'
+  if (diff < 0) return 'Überfällig'
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Intl.DateTimeFormat('de-DE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(y, m - 1, d))
+}
+
+// Liegt das Datum in der Vergangenheit (vor heute)?
+export function isOverdue(iso) {
+  const diff = daysUntil(iso)
+  return diff != null && diff < 0
+}

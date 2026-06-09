@@ -1,5 +1,6 @@
 import { CalendarClock } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
+import { formatDueLabel } from '../lib/date.js'
 
 // Eine einzelne Karte aus "Dein Fokus heute".
 // Bekommt eine echte `task` und zeigt sie mit dem Akzent ihres Bereichs.
@@ -29,8 +30,8 @@ export default function FocusCard({ task }) {
           <span>
             {task.reason
               ? task.reason
-              : task.due
-                ? `Fällig: ${task.due}`
+              : task.due_date
+                ? `Fällig: ${formatDueLabel(task.due_date)}`
                 : 'Kein Datum'}
           </span>
         </div>

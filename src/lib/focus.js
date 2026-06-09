@@ -1,24 +1,22 @@
+import { daysUntil } from './date.js'
+
 // Wählt die "Fokus heute"-Tasks aus deinen echten Tasks aus.
 //
 // Noch keine KI — eine simple, nachvollziehbare Regel: offene Tasks nach
-// Dringlichkeit der Fälligkeit sortieren und die wichtigsten 3 nehmen.
-// In Phase 3 ersetzen wir diese Funktion durch einen KI-Vorschlag; die UI
-// bleibt gleich (wieder der saubere Schnitt).
+// Fälligkeit sortieren (überfällig/heute zuerst, ohne Datum zuletzt) und die
+// wichtigsten 3 nehmen. Per "KI-Plan"-Knopf wird das durch einen echten
+// Vorschlag ersetzt; die UI bleibt gleich.
 
-// Kleiner = dringender. Unbekannte Texte landen im Mittelfeld, "ohne Datum"
-// ganz hinten.
-function urgency(due) {
-  if (!due) return 3
-  const d = due.toLowerCase()
-  if (d.includes('heute')) return 0
-  if (d.includes('morgen')) return 1
-  return 2 // "Diese Woche", "Bis Freitag", …
+// Kleiner = dringender. Ohne Datum ganz nach hinten.
+function urgency(task) {
+  const d = daysUntil(task.due_date)
+  return d == null ? 99_999 : d
 }
 
 export function selectFocusTasks(tasks, limit = 3) {
   return tasks
     .filter((t) => !t.done) // nur offene
     .slice() // Kopie, damit wir das Original nicht umsortieren
-    .sort((a, b) => urgency(a.due) - urgency(b.due))
+    .sort((a, b) => urgency(a) - urgency(b))
     .slice(0, limit)
 }

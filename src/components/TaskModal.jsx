@@ -1,26 +1,37 @@
 import { useEffect, useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
+import { isoInDays } from '../lib/date.js'
 
 // Formular zum Erfassen ODER Bearbeiten einer Task.
 //
 // Ein Modal für beides: ohne `task` ist es "neu", mit `task` ist es
 // "bearbeiten" (Felder vorausgefüllt, Speichern statt Hinzufügen, plus
-// Löschen-Knopf). So vermeiden wir doppelten Code.
-const DUE_OPTIONS = ['Heute', 'Morgen', 'Diese Woche']
+// Löschen-Knopf).
+//
+// Fälligkeit wird als echtes Datum ('YYYY-MM-DD') gespeichert. Die Chips
+// "Heute/Morgen/Übermorgen" sind nur Schnellwege, die dieses Datum setzen;
+// über das Kalender-Feld lässt sich jeder beliebige Tag wählen.
+const QUICK = [
+  { label: 'Heute', days: 0 },
+  { label: 'Morgen', days: 1 },
+  { label: 'Übermorgen', days: 2 },
+]
 
 export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   const isEdit = Boolean(task)
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('study')
-  const [due, setDue] = useState(null)
+  const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
+  const [description, setDescription] = useState('')
 
   // Beim Öffnen die Felder passend füllen: leer (neu) oder aus der Task.
   useEffect(() => {
     if (!open) return
     setTitle(task?.title ?? '')
     setArea(task?.area ?? 'study')
-    setDue(task?.due ?? null)
+    setDueDate(task?.due_date ?? null)
+    setDescription(task?.description ?? '')
   }, [open, task])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
@@ -43,7 +54,12 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
-    onSubmit({ title: trimmed, area, due })
+    onSubmit({
+      title: trimmed,
+      area,
+      due_date: dueDate,
+      description: description.trim() || null,
+    })
     onClose()
   }
 
@@ -57,7 +73,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
         aria-modal="true"
         aria-label={isEdit ? 'Task bearbeiten' : 'Neue Task erfassen'}
         onClick={(e) => e.stopPropagation()}
-        className="w-full rounded-t-3xl bg-surface p-6 shadow-xl sm:max-w-md sm:rounded-3xl"
+        className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-6 shadow-xl sm:max-w-md sm:rounded-3xl"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}
       >
         <div className="mb-5 flex items-center justify-between">
@@ -75,6 +91,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Titel */}
           <input
             autoFocus
             type="text"
@@ -84,6 +101,16 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
             className="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-base outline-none transition-colors focus:border-ink/30"
           />
 
+          {/* Beschreibung (optional) */}
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Beschreibung (optional)"
+            rows={3}
+            className="mt-3 w-full resize-none rounded-xl border border-line bg-canvas px-4 py-3 text-sm outline-none transition-colors focus:border-ink/30"
+          />
+
+          {/* Bereich */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Bereich</p>
           <div className="grid grid-cols-3 gap-2">
             {Object.values(areas).map((a) => {
@@ -106,29 +133,50 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
             })}
           </div>
 
-          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
-            Fällig <span className="font-normal">(optional)</span>
-          </p>
+          {/* Fällig: Schnell-Chips + Kalender-Feld */}
+          <div className="mb-2 mt-5 flex items-center justify-between">
+            <p className="text-sm font-medium text-ink-soft">
+              Fällig <span className="font-normal">(optional)</span>
+            </p>
+            {dueDate && (
+              <button
+                type="button"
+                onClick={() => setDueDate(null)}
+                className="text-xs text-ink-soft underline-offset-2 hover:underline"
+              >
+                entfernen
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
-            {DUE_OPTIONS.map((opt) => {
-              const active = due === opt
+            {QUICK.map((q) => {
+              const iso = isoInDays(q.days)
+              const active = dueDate === iso
               return (
                 <button
-                  key={opt}
+                  key={q.label}
                   type="button"
-                  onClick={() => setDue(active ? null : opt)}
+                  onClick={() => setDueDate(active ? null : iso)}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                     active
                       ? 'border-ink bg-ink text-white'
                       : 'border-line text-ink-soft hover:border-ink/30'
                   }`}
                 >
-                  {opt}
+                  {q.label}
                 </button>
               )
             })}
           </div>
+          {/* Kalender: beliebigen Tag wählen */}
+          <input
+            type="date"
+            value={dueDate || ''}
+            onChange={(e) => setDueDate(e.target.value || null)}
+            className="mt-2 w-full rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+          />
 
+          {/* Absenden */}
           <button
             type="submit"
             disabled={!canSubmit}

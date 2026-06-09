@@ -57,7 +57,8 @@ Heutige Termine (JSON):
 ${JSON.stringify(events)}
 
 Wähle die 1-3 wichtigsten Tasks für heute. Berücksichtige Fälligkeit
-("Heute" zuerst), Bereich und die Termine (wenig Zeit -> kürzere Tasks).
+("Heute"/"Überfällig" zuerst), Bereich, optionale Beschreibung und die
+Termine (wenig Zeit -> kürzere Tasks).
 
 Antworte exakt in diesem JSON-Format:
 {

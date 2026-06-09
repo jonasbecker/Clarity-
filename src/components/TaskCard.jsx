@@ -1,10 +1,14 @@
 import { Check, Trash2 } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
+import { formatDueLabel, isOverdue } from '../lib/date.js'
 
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
+// Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
 export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   const area = areas[task.area]
   const done = task.done
+  const dueLabel = formatDueLabel(task.due_date)
+  const overdue = !done && isOverdue(task.due_date)
 
   return (
     <div className="group flex items-center gap-3 py-2.5">
@@ -13,7 +17,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
         onClick={() => onToggle(task.id)}
         aria-pressed={done}
         aria-label={done ? 'Als offen markieren' : 'Als erledigt markieren'}
-        className="grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors"
+        className="mt-0.5 grid size-5 shrink-0 self-start place-items-center rounded-full border-2 transition-colors"
         style={{
           borderColor: area.color,
           backgroundColor: done ? area.color : 'transparent',
@@ -22,20 +26,33 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
         {done && <Check size={12} strokeWidth={3} className="text-white" />}
       </button>
 
-      {/* Titel antippen → bearbeiten */}
+      {/* Titel (antippen → bearbeiten) + optionale Beschreibung */}
       <button
         type="button"
         onClick={() => onEdit(task)}
-        className={`flex-1 text-left text-sm leading-snug transition-colors hover:text-ink ${
-          done ? 'text-ink-soft line-through' : ''
-        }`}
+        className="min-w-0 flex-1 text-left"
       >
-        {task.title}
+        <span
+          className={`block text-sm leading-snug transition-colors hover:text-ink ${
+            done ? 'text-ink-soft line-through' : ''
+          }`}
+        >
+          {task.title}
+        </span>
+        {task.description && (
+          <span className="mt-0.5 line-clamp-1 block text-xs text-ink-soft">
+            {task.description}
+          </span>
+        )}
       </button>
 
-      {task.due && (
-        <span className="shrink-0 rounded-full bg-canvas px-2 py-0.5 text-xs text-ink-soft">
-          {task.due}
+      {dueLabel && (
+        <span
+          className={`shrink-0 self-start rounded-full px-2 py-0.5 text-xs ${
+            overdue ? 'bg-red-50 text-red-500' : 'bg-canvas text-ink-soft'
+          }`}
+        >
+          {dueLabel}
         </span>
       )}
 
@@ -43,7 +60,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
         type="button"
         onClick={() => onDelete(task.id)}
         aria-label="Task löschen"
-        className="shrink-0 text-ink-soft opacity-60 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+        className="shrink-0 self-start text-ink-soft opacity-60 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
       >
         <Trash2 size={15} />
       </button>

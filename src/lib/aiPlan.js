@@ -1,16 +1,20 @@
+import { formatDueLabel } from './date.js'
+
 // Ruft unsere eigene Server-Funktion /api/prioritize auf.
 // Die Komponenten sprechen nie direkt mit Groq — nur mit unserem Backend.
 export async function fetchAiPlan({ tasks, events }) {
   const res = await fetch('/api/prioritize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // Wir schicken nur, was die KI braucht — schlank halten.
+    // Wir schicken nur, was die KI braucht — schlank halten. Das Datum als
+    // lesbares Label ("Heute", "Mi., 11. Juni"), damit die KI es versteht.
     body: JSON.stringify({
       tasks: tasks.map((t) => ({
         id: t.id,
         title: t.title,
         area: t.area,
-        due: t.due,
+        due: formatDueLabel(t.due_date),
+        description: t.description || undefined,
       })),
       events: events.map((e) => ({ title: e.title, start: e.start })),
     }),

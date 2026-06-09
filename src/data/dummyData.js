@@ -5,6 +5,8 @@
 // kommen. In Phase 2 ersetzen wir den Inhalt hier durch echte API-Calls
 // (Notion, Google Calendar) — die Komponenten bleiben unverändert.
 
+import { isoInDays } from '../lib/date.js'
+
 // Die drei Lebensbereiche. Die `accent`-Werte zeigen auf die CSS-Variablen
 // aus index.css, damit Farben an einer Stelle definiert sind.
 export const areas = {
@@ -29,12 +31,14 @@ export const timeline = [
 ]
 
 // Alle offenen Tasks. In der UI gruppieren wir sie nach `area`.
+// `due_date` ist ein echtes Datum ('YYYY-MM-DD') oder null; isoInDays setzt
+// die Beispiele relativ zu heute, damit die Demo immer aktuell aussieht.
 export const openTasks = [
-  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', due: 'Diese Woche' },
-  { id: 'o2', title: 'Vorlesung Datenbanken nachbereiten', area: 'study', due: null },
-  { id: 'o3', title: 'Klausuranmeldung prüfen', area: 'study', due: 'Bis Freitag' },
-  { id: 'o4', title: 'Code-Review für PR #213', area: 'work', due: 'Heute' },
-  { id: 'o5', title: 'Reisekostenabrechnung einreichen', area: 'work', due: null },
-  { id: 'o6', title: 'Wäsche waschen', area: 'private', due: null },
-  { id: 'o7', title: 'Zahnarzttermin vereinbaren', area: 'private', due: 'Diese Woche' },
+  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', due_date: isoInDays(4), description: null },
+  { id: 'o2', title: 'Vorlesung Datenbanken nachbereiten', area: 'study', due_date: null, description: null },
+  { id: 'o3', title: 'Klausuranmeldung prüfen', area: 'study', due_date: isoInDays(2), description: 'Im Campus-Portal anmelden' },
+  { id: 'o4', title: 'Code-Review für PR #213', area: 'work', due_date: isoInDays(0), description: null },
+  { id: 'o5', title: 'Reisekostenabrechnung einreichen', area: 'work', due_date: null, description: null },
+  { id: 'o6', title: 'Wäsche waschen', area: 'private', due_date: null, description: null },
+  { id: 'o7', title: 'Zahnarzttermin vereinbaren', area: 'private', due_date: isoInDays(3), description: null },
 ]

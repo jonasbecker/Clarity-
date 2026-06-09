@@ -42,16 +42,16 @@ export function useTasks(session) {
     }
   }, [session])
 
-  async function addTask({ title, area, due }) {
+  async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
-        { id: crypto.randomUUID(), title, area, due, done: false },
+        { id: crypto.randomUUID(), done: false, ...fields },
         ...prev,
       ])
       return
     }
     try {
-      const created = await createTask({ title, area, due })
+      const created = await createTask(fields)
       setTasks((prev) => [created, ...prev])
     } catch (e) {
       setError(e.message)
