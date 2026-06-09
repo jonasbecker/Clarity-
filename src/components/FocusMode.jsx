@@ -82,7 +82,7 @@ export default function FocusMode({ tasks, onToggle, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="mx-auto block w-full max-w-sm rounded-xl bg-ink py-4 font-medium text-white"
+            className="mx-auto block w-full max-w-sm rounded-xl bg-ink py-4 font-medium text-canvas"
           >
             Schließen
           </button>
@@ -102,7 +102,7 @@ export default function FocusMode({ tasks, onToggle, onClose }) {
                 onToggle(task.id) // in der echten Liste als erledigt speichern
                 setIndex((i) => i + 1)
               }}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink py-4 font-medium text-white"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink py-4 font-medium text-canvas"
             >
               <Check size={18} strokeWidth={2.5} />
               Erledigt

@@ -19,6 +19,21 @@
     'Segoe UI', sans-serif;
 }
 
+/* Dark Mode: dieselben Token-Namen, andere Werte. Wir kippen die Klasse
+   `dark` auf das <html>-Element (siehe lib/useTheme.js) — alle Utilities
+   wie `bg-canvas`/`text-ink` zeigen auf diese Variablen und drehen mit. */
+:root {
+  color-scheme: light;
+}
+:root.dark {
+  color-scheme: dark; /* native Elemente (Datums-Picker, Scrollbar) mitnehmen */
+  --color-canvas: #0f0f10;
+  --color-surface: #1a1a1d;
+  --color-ink: #f4f4f5;
+  --color-ink-soft: #a1a1aa;
+  --color-line: #2a2a2e;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -27,6 +42,7 @@ body {
   margin: 0;
   background-color: var(--color-canvas);
   color: var(--color-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   /* Respect the iPhone notch / safe areas when added to home screen. */

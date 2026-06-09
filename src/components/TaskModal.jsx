@@ -159,7 +159,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
                   onClick={() => setDueDate(active ? null : iso)}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                     active
-                      ? 'border-ink bg-ink text-white'
+                      ? 'border-ink bg-ink text-canvas'
                       : 'border-line text-ink-soft hover:border-ink/30'
                   }`}
                 >
@@ -180,7 +180,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-7 w-full rounded-xl bg-ink py-3.5 font-medium text-white transition-opacity disabled:opacity-40"
+            className="mt-7 w-full rounded-xl bg-ink py-3.5 font-medium text-canvas transition-opacity disabled:opacity-40"
           >
             {isEdit ? 'Speichern' : 'Task hinzufügen'}
           </button>

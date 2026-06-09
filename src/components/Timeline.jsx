@@ -66,7 +66,7 @@ function ConnectCard({ onConnect, error }) {
       <button
         type="button"
         onClick={onConnect}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-3 font-medium text-white"
+        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-3 font-medium text-canvas"
       >
         {error ? <RefreshCw size={16} /> : <Calendar size={16} />}
         {error ? 'Erneut versuchen' : 'Mit Google Kalender verbinden'}

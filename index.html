@@ -10,6 +10,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Clarity" />
     <title>Clarity</title>
+    <script>
+      // Theme früh setzen, damit beim Laden kein heller Blitz im Dark Mode
+      // erscheint. Liest dieselbe Quelle wie lib/useTheme.js.
+      try {
+        var t = localStorage.getItem('clarity-theme')
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

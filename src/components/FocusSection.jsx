@@ -37,7 +37,7 @@ export default function FocusSection({
               <button
                 type="button"
                 onClick={onStartFocus}
-                className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-white transition-transform active:scale-95"
+                className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-canvas transition-transform active:scale-95"
               >
                 <Play size={12} strokeWidth={2.5} />
                 Fokus

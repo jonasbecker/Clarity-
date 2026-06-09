@@ -10,6 +10,7 @@ import DemoBanner from '../components/DemoBanner.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
+import { useTheme } from '../lib/useTheme.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, timeline } from '../data/dummyData.js'
@@ -23,6 +24,7 @@ export default function TodayView({ session }) {
     useTasks(session)
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
+  const { theme, toggle: toggleTheme } = useTheme()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -60,6 +62,8 @@ export default function TodayView({ session }) {
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
       <Header
         name={user.name}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
       />
 
