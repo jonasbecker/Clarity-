@@ -18,31 +18,6 @@ export const user = {
   name: 'Jonas',
 }
 
-// Die 3 KI-vorgeschlagenen Top-Tasks für heute ("Dein Fokus heute").
-export const focusTasks = [
-  {
-    id: 'f1',
-    title: 'Statistik-Übungsblatt 4 abschließen',
-    area: 'study',
-    reason: 'Abgabe morgen um 12:00',
-    estimate: '90 Min',
-  },
-  {
-    id: 'f2',
-    title: 'Präsentation für Team-Meeting vorbereiten',
-    area: 'work',
-    reason: 'Meeting heute um 14:00',
-    estimate: '45 Min',
-  },
-  {
-    id: 'f3',
-    title: 'Geburtstagsgeschenk für Mama bestellen',
-    area: 'private',
-    reason: 'Noch 3 Tage bis zum Versand-Deadline',
-    estimate: '15 Min',
-  },
-]
-
 // Kalender-Termine für die Timeline. `start`/`end` sind 24h-Zeiten als
 // String — bewusst simpel gehalten für Phase 1.
 export const timeline = [

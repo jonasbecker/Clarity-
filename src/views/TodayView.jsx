@@ -8,19 +8,22 @@ import AddTaskModal from '../components/AddTaskModal.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
+import { selectFocusTasks } from '../lib/focus.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
-import { user, focusTasks, timeline } from '../data/dummyData.js'
+import { user, timeline } from '../data/dummyData.js'
 
 // Die "Heute-View".
 //
-// Die Tasks kommen jetzt aus dem useTasks-Hook (Supabase oder Demo). Fokus
-// und Timeline sind weiterhin Dummy-Daten — die binden wir in einem
-// späteren Schritt an den Kalender an.
+// Tasks kommen aus dem useTasks-Hook (Supabase oder Demo), die Timeline aus
+// useGoogleCalendar, und "Fokus heute" wird aus den echten Tasks abgeleitet.
 export default function TodayView({ session }) {
   const { tasks, loading, error, addTask, toggleTask, removeTask } =
     useTasks(session)
   const calendar = useGoogleCalendar()
   const [isModalOpen, setModalOpen] = useState(false)
+
+  // Aus allen Tasks die dringendsten 3 für "Fokus heute" wählen.
+  const focus = selectFocusTasks(tasks)
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
@@ -33,7 +36,7 @@ export default function TodayView({ session }) {
 
       {!isSupabaseConfigured && <DemoBanner />}
 
-      <FocusSection tasks={focusTasks} />
+      {!loading && <FocusSection tasks={focus} />}
       <Timeline
         status={calendar.status}
         events={calendar.events}
