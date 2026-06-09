@@ -3,7 +3,7 @@ import TaskCard from './TaskCard.jsx'
 
 // Eine nach Bereich gruppierte Liste offener Tasks (z.B. alle "Studium").
 // Reicht die Aktionen onToggle/onDelete an jede TaskCard weiter.
-export default function TaskGroup({ areaId, tasks, onToggle, onDelete }) {
+export default function TaskGroup({ areaId, tasks, onToggle, onEdit, onDelete }) {
   const area = areas[areaId]
   if (tasks.length === 0) return null
 
@@ -24,6 +24,7 @@ export default function TaskGroup({ areaId, tasks, onToggle, onDelete }) {
             key={task.id}
             task={task}
             onToggle={onToggle}
+            onEdit={onEdit}
             onDelete={onDelete}
           />
         ))}

@@ -1,18 +1,24 @@
-import { Target } from 'lucide-react'
+import { Play } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import FocusCard from './FocusCard.jsx'
 
 // "Dein Fokus heute": die wichtigsten offenen Tasks, nach Dringlichkeit.
-// Bekommt bereits ausgewählte Tasks (siehe lib/focus.js).
-export default function FocusSection({ tasks }) {
+// `onStartFocus` startet den Fokus-Modus (nur sinnvoll, wenn es Tasks gibt).
+export default function FocusSection({ tasks, onStartFocus }) {
   return (
     <section className="mb-10">
       <SectionTitle
         aside={
-          <span className="inline-flex items-center gap-1">
-            <Target size={14} className="text-area-study" />
-            Nach Dringlichkeit
-          </span>
+          tasks.length > 0 ? (
+            <button
+              type="button"
+              onClick={onStartFocus}
+              className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-white transition-transform active:scale-95"
+            >
+              <Play size={12} strokeWidth={2.5} />
+              Fokus-Modus
+            </button>
+          ) : null
         }
       >
         Dein Fokus heute

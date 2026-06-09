@@ -1,13 +1,8 @@
 import { Check, Trash2 } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 
-// Eine Task-Zeile mit abhakbarem Kreis und Löschen-Knopf.
-//
-// Wichtige Änderung gegenüber vorher: die Karte hat KEINEN eigenen State
-// mehr. Ob sie erledigt ist, steht in `task.done` (kommt aus der Datenbank).
-// Beim Klick ruft sie nur onToggle/onDelete auf — die TodayView speichert
-// die Änderung. So überlebt der Status das Neuladen der Seite.
-export default function TaskCard({ task, onToggle, onDelete }) {
+// Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
+export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   const area = areas[task.area]
   const done = task.done
 
@@ -27,13 +22,16 @@ export default function TaskCard({ task, onToggle, onDelete }) {
         {done && <Check size={12} strokeWidth={3} className="text-white" />}
       </button>
 
-      <span
-        className={`flex-1 text-sm leading-snug transition-colors ${
+      {/* Titel antippen → bearbeiten */}
+      <button
+        type="button"
+        onClick={() => onEdit(task)}
+        className={`flex-1 text-left text-sm leading-snug transition-colors hover:text-ink ${
           done ? 'text-ink-soft line-through' : ''
         }`}
       >
         {task.title}
-      </span>
+      </button>
 
       {task.due && (
         <span className="shrink-0 rounded-full bg-canvas px-2 py-0.5 text-xs text-ink-soft">
@@ -41,7 +39,6 @@ export default function TaskCard({ task, onToggle, onDelete }) {
         </span>
       )}
 
-      {/* Löschen: dezent, erscheint beim Hovern (am Handy immer sichtbar) */}
       <button
         type="button"
         onClick={() => onDelete(task.id)}

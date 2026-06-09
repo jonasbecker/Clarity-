@@ -80,6 +80,23 @@ export function useTasks(session) {
     }
   }
 
+  async function editTask(id, changes) {
+    const prev = tasks
+    // Sofort übernehmen …
+    setTasks((cur) =>
+      cur.map((t) => (t.id === id ? { ...t, ...changes } : t)),
+    )
+    if (!isSupabaseConfigured) return
+
+    // … und in der DB speichern; bei Fehler zurückrollen.
+    try {
+      await updateTask(id, changes)
+    } catch (e) {
+      setError(e.message)
+      setTasks(prev)
+    }
+  }
+
   async function removeTask(id) {
     const prev = tasks
     setTasks((cur) => cur.filter((t) => t.id !== id))
@@ -93,5 +110,5 @@ export function useTasks(session) {
     }
   }
 
-  return { tasks, loading, error, addTask, toggleTask, removeTask }
+  return { tasks, loading, error, addTask, editTask, toggleTask, removeTask }
 }

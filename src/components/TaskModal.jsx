@@ -1,33 +1,32 @@
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { Trash2, X } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 
-// Schnell-Erfassen-Formular für eine neue Task.
+// Formular zum Erfassen ODER Bearbeiten einer Task.
 //
-// Lern-Konzepte hier:
-// - "Kontrollierte Eingaben" (controlled inputs): der Wert jedes Feldes
-//   lebt in einem useState. React ist die einzige Quelle der Wahrheit,
-//   nicht das DOM. Tippt man, ruft onChange setState auf → neu rendern.
-// - Das Modal weiß NICHT, wie eine Task gespeichert wird. Es ruft beim
-//   Absenden nur die Funktion `onAdd` auf, die es als Prop bekommt.
-//   (Die TodayView entscheidet, was mit der Task passiert.)
-//
-// Fälligkeits-Optionen: bewusst als Chips statt freiem Text — simpel und
-// passt zum Stil der Dummy-Daten.
+// Ein Modal für beides: ohne `task` ist es "neu", mit `task` ist es
+// "bearbeiten" (Felder vorausgefüllt, Speichern statt Hinzufügen, plus
+// Löschen-Knopf). So vermeiden wir doppelten Code.
 const DUE_OPTIONS = ['Heute', 'Morgen', 'Diese Woche']
 
-export default function AddTaskModal({ open, onClose, onAdd }) {
-  // Ein State-Stück pro Eingabefeld.
+export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
+  const isEdit = Boolean(task)
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('study')
   const [due, setDue] = useState(null)
 
-  // Mit Escape schließen + Hintergrund-Scrollen sperren, solange offen.
+  // Beim Öffnen die Felder passend füllen: leer (neu) oder aus der Task.
   useEffect(() => {
     if (!open) return
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
+    setTitle(task?.title ?? '')
+    setArea(task?.area ?? 'study')
+    setDue(task?.due ?? null)
+  }, [open, task])
+
+  // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
@@ -42,19 +41,13 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
   const canSubmit = trimmed.length > 0
 
   function handleSubmit(e) {
-    e.preventDefault() // Standard-Neuladen der Seite verhindern.
+    e.preventDefault()
     if (!canSubmit) return
-    onAdd({ title: trimmed, area, due })
-    // Felder für die nächste Eingabe zurücksetzen und schließen.
-    setTitle('')
-    setArea('study')
-    setDue(null)
+    onSubmit({ title: trimmed, area, due })
     onClose()
   }
 
   return (
-    // Backdrop: Klick daneben schließt. Auf dem Handy sitzt das Sheet
-    // unten, auf dem Desktop mittig.
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
       onClick={onClose}
@@ -62,14 +55,15 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Neue Task erfassen"
-        // stopPropagation: Klick INS Formular soll nicht schließen.
+        aria-label={isEdit ? 'Task bearbeiten' : 'Neue Task erfassen'}
         onClick={(e) => e.stopPropagation()}
         className="w-full rounded-t-3xl bg-surface p-6 shadow-xl sm:max-w-md sm:rounded-3xl"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">Neue Task</h2>
+          <h2 className="text-lg font-semibold tracking-tight">
+            {isEdit ? 'Task bearbeiten' : 'Neue Task'}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -81,7 +75,6 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Titel */}
           <input
             autoFocus
             type="text"
@@ -91,7 +84,6 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
             className="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-base outline-none transition-colors focus:border-ink/30"
           />
 
-          {/* Bereich: Segment-Buttons mit Akzentfarbe */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Bereich</p>
           <div className="grid grid-cols-3 gap-2">
             {Object.values(areas).map((a) => {
@@ -114,7 +106,6 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
             })}
           </div>
 
-          {/* Fällig: optionale Chips, nochmal Tippen hebt die Auswahl auf */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
             Fällig <span className="font-normal">(optional)</span>
           </p>
@@ -138,14 +129,28 @@ export default function AddTaskModal({ open, onClose, onAdd }) {
             })}
           </div>
 
-          {/* Absenden: deaktiviert, solange kein Titel da ist */}
           <button
             type="submit"
             disabled={!canSubmit}
             className="mt-7 w-full rounded-xl bg-ink py-3.5 font-medium text-white transition-opacity disabled:opacity-40"
           >
-            Task hinzufügen
+            {isEdit ? 'Speichern' : 'Task hinzufügen'}
           </button>
+
+          {/* Löschen nur im Bearbeiten-Modus */}
+          {isEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                onDelete(task.id)
+                onClose()
+              }}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+            >
+              <Trash2 size={15} />
+              Task löschen
+            </button>
+          )}
         </form>
       </div>
     </div>
