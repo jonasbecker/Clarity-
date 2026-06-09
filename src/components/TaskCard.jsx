@@ -1,20 +1,21 @@
-import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, Trash2 } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 
-// Eine Task-Zeile mit abhakbarem Kreis.
-// `useState` merkt sich lokal, ob die Task erledigt ist — rein visuell,
-// es wird (noch) nichts gespeichert. So lernst du, wie State in React
-// eine Komponente neu rendern lässt.
-export default function TaskCard({ task }) {
-  const [done, setDone] = useState(false)
+// Eine Task-Zeile mit abhakbarem Kreis und Löschen-Knopf.
+//
+// Wichtige Änderung gegenüber vorher: die Karte hat KEINEN eigenen State
+// mehr. Ob sie erledigt ist, steht in `task.done` (kommt aus der Datenbank).
+// Beim Klick ruft sie nur onToggle/onDelete auf — die TodayView speichert
+// die Änderung. So überlebt der Status das Neuladen der Seite.
+export default function TaskCard({ task, onToggle, onDelete }) {
   const area = areas[task.area]
+  const done = task.done
 
   return (
-    <div className="flex items-center gap-3 py-2.5">
+    <div className="group flex items-center gap-3 py-2.5">
       <button
         type="button"
-        onClick={() => setDone((d) => !d)}
+        onClick={() => onToggle(task.id)}
         aria-pressed={done}
         aria-label={done ? 'Als offen markieren' : 'Als erledigt markieren'}
         className="grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors"
@@ -39,6 +40,16 @@ export default function TaskCard({ task }) {
           {task.due}
         </span>
       )}
+
+      {/* Löschen: dezent, erscheint beim Hovern (am Handy immer sichtbar) */}
+      <button
+        type="button"
+        onClick={() => onDelete(task.id)}
+        aria-label="Task löschen"
+        className="shrink-0 text-ink-soft opacity-60 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+      >
+        <Trash2 size={15} />
+      </button>
     </div>
   )
 }

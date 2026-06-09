@@ -5,39 +5,53 @@ import Timeline from '../components/Timeline.jsx'
 import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import AddTaskModal from '../components/AddTaskModal.jsx'
-import { user, focusTasks, timeline, openTasks } from '../data/dummyData.js'
+import DemoBanner from '../components/DemoBanner.jsx'
+import { useTasks } from '../lib/useTasks.js'
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
+import { user, focusTasks, timeline } from '../data/dummyData.js'
 
-// Die "Heute-View" — die einzige Seite in Phase 1.
+// Die "Heute-View".
 //
-// Wichtig: die Tasks liegen jetzt in useState (Start: die Dummy-Daten).
-// Früher waren sie fest verdrahtet — aber Dinge, die sich ändern können
-// (neue Task hinzufügen!), gehören in State. Das nennt man "State nach
-// oben heben": er sitzt hier, weil sowohl die Liste als auch das Formular
-// ihn brauchen.
-export default function TodayView() {
-  const [tasks, setTasks] = useState(openTasks)
+// Die Tasks kommen jetzt aus dem useTasks-Hook (Supabase oder Demo). Fokus
+// und Timeline sind weiterhin Dummy-Daten — die binden wir in einem
+// späteren Schritt an den Kalender an.
+export default function TodayView({ session }) {
+  const { tasks, loading, error, addTask, toggleTask, removeTask } =
+    useTasks(session)
   const [isModalOpen, setModalOpen] = useState(false)
-
-  // Bekommt die Felder aus dem Formular und legt eine vollständige Task an.
-  function handleAddTask({ title, area, due }) {
-    const newTask = { id: crypto.randomUUID(), title, area, due }
-    // Neue Liste statt Mutation: React erkennt Änderungen an der Identität
-    // des Arrays. Die neue Task kommt nach vorne.
-    setTasks((prev) => [newTask, ...prev])
-  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
-      <Header name={user.name} />
+      <Header
+        name={user.name}
+        onSignOut={
+          isSupabaseConfigured ? () => supabase.auth.signOut() : null
+        }
+      />
+
+      {!isSupabaseConfigured && <DemoBanner />}
+
       <FocusSection tasks={focusTasks} />
       <Timeline events={timeline} />
-      <TaskList tasks={tasks} />
+
+      {error && (
+        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          Fehler beim Laden: {error}
+        </p>
+      )}
+
+      <TaskList
+        tasks={tasks}
+        loading={loading}
+        onToggle={toggleTask}
+        onDelete={removeTask}
+      />
 
       <AddTaskButton onClick={() => setModalOpen(true)} />
       <AddTaskModal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        onAdd={handleAddTask}
+        onAdd={addTask}
       />
     </main>
   )

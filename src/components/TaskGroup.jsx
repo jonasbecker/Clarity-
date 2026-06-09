@@ -2,7 +2,8 @@ import { areas } from '../data/dummyData.js'
 import TaskCard from './TaskCard.jsx'
 
 // Eine nach Bereich gruppierte Liste offener Tasks (z.B. alle "Studium").
-export default function TaskGroup({ areaId, tasks }) {
+// Reicht die Aktionen onToggle/onDelete an jede TaskCard weiter.
+export default function TaskGroup({ areaId, tasks, onToggle, onDelete }) {
   const area = areas[areaId]
   if (tasks.length === 0) return null
 
@@ -19,7 +20,12 @@ export default function TaskGroup({ areaId, tasks }) {
       </div>
       <div className="divide-y divide-line">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onToggle={onToggle}
+            onDelete={onDelete}
+          />
         ))}
       </div>
     </div>

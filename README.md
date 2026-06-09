@@ -48,12 +48,34 @@ Google Calendar) — die UI bleibt unverändert.
 4. **Offene Tasks** — gruppiert nach Studium / Arbeit / Privat (je eigener Akzent)
 5. **+ Task** — schwebender Button zum Erfassen (Phase 1: nur UI)
 
+## Tasks speichern mit Supabase (optional)
+
+Ohne Einrichtung läuft die App im **Demo-Modus**: Tasks funktionieren, werden
+aber beim Neuladen nicht gespeichert. Damit Tasks dauerhaft in deinem eigenen
+Konto liegen (und über Geräte synchronisieren), verbinde Supabase — kostenlos:
+
+1. **Projekt anlegen** auf [supabase.com](https://supabase.com) (kostenloser Account).
+2. **Tabelle erstellen**: im Projekt links *SQL Editor → New query*, den Inhalt
+   von [`supabase/schema.sql`](supabase/schema.sql) einfügen und *Run* klicken.
+3. **Schlüssel eintragen**: *Project Settings → API* öffnen, dann:
+   ```bash
+   cp .env.example .env.local
+   ```
+   In `.env.local` die *Project URL* und den *anon public* Key eintragen.
+4. **(Empfohlen)** *Authentication → Providers → Email*: „Confirm email"
+   ausschalten, damit du dich ohne Bestätigungs-Mail sofort anmelden kannst.
+5. **Neu starten**: `npm run dev`. Jetzt erscheint statt des Demo-Banners ein
+   Login — registrieren, anmelden, fertig. Deine Tasks liegen nun in Supabase.
+
+> Die zwei Schlüssel sind **öffentlich** (kein Geheimnis). Die Sicherheit kommt
+> aus *Row Level Security*: jeder sieht nur seine eigenen Tasks.
+
 ## Nächste Phasen
 
 | Phase | Inhalt |
 |-------|--------|
 | 1 ✅  | Fundament + Heute-View mit Dummy-Daten |
-| 2     | Echte Integrationen: Notion API, Google Calendar API |
+| 2 🚧  | Tasks speichern + Login (Supabase) · Google Calendar folgt |
 | 3     | KI-Kern: Auto-Priorisierung + Tagesplan-Vorschlag |
 | 4     | Voice Capture, Muster-Erkennung, Focus Mode |
 | 5     | Deployment, Login, Onboarding |
