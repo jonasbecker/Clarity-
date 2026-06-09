@@ -70,12 +70,39 @@ Konto liegen (und über Geräte synchronisieren), verbinde Supabase — kostenlo
 > Die zwei Schlüssel sind **öffentlich** (kein Geheimnis). Die Sicherheit kommt
 > aus *Row Level Security*: jeder sieht nur seine eigenen Tasks.
 
+## Google Calendar verbinden (optional)
+
+Ohne Einrichtung zeigt die Timeline Beispiel-Termine. Für deine echten
+Termine brauchst du eine kostenlose **OAuth Client ID** von Google:
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → oben ein
+   **neues Projekt** anlegen.
+2. **APIs & Services → Library** → „Google Calendar API" suchen → **Enable**.
+3. **APIs & Services → OAuth consent screen** → Typ **External** → App-Name +
+   deine E-Mail eintragen. Unter **Test users** deine eigene Google-Adresse
+   hinzufügen (sonst lässt Google dich nicht zu).
+4. **APIs & Services → Credentials → Create Credentials → OAuth client ID** →
+   Typ **Web application**. Bei **Authorized JavaScript origins** beide URLs
+   eintragen:
+   - `http://localhost:5173`
+   - deine Vercel-URL, z. B. `https://clarity-chi-three.vercel.app`
+   → **Create**, dann die **Client ID** kopieren.
+5. Als `VITE_GOOGLE_CLIENT_ID` hinterlegen — in `.env.local` **und** in den
+   Vercel Environment Variables. Danach (auf Vercel) einmal neu deployen.
+
+In der App erscheint dann in der Timeline der Knopf **„Mit Google Kalender
+verbinden"**. Beim ersten Mal zeigt Google evtl. „App nicht verifiziert" →
+*Erweitert → trotzdem fortfahren* (normal im Test-Modus deiner eigenen App).
+
+> Nur **Lesezugriff** (`calendar.readonly`). Im Test-Modus gilt die Verbindung
+> etwa eine Stunde, danach einfach erneut verbinden.
+
 ## Nächste Phasen
 
 | Phase | Inhalt |
 |-------|--------|
 | 1 ✅  | Fundament + Heute-View mit Dummy-Daten |
-| 2 🚧  | Tasks speichern + Login (Supabase) · Google Calendar folgt |
+| 2 🚧  | Tasks speichern + Login (Supabase) · Google Calendar (Timeline) |
 | 3     | KI-Kern: Auto-Priorisierung + Tagesplan-Vorschlag |
 | 4     | Voice Capture, Muster-Erkennung, Focus Mode |
 | 5     | Deployment, Login, Onboarding |

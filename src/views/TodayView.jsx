@@ -7,6 +7,7 @@ import AddTaskButton from '../components/AddTaskButton.jsx'
 import AddTaskModal from '../components/AddTaskModal.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import { useTasks } from '../lib/useTasks.js'
+import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, focusTasks, timeline } from '../data/dummyData.js'
 
@@ -18,6 +19,7 @@ import { user, focusTasks, timeline } from '../data/dummyData.js'
 export default function TodayView({ session }) {
   const { tasks, loading, error, addTask, toggleTask, removeTask } =
     useTasks(session)
+  const calendar = useGoogleCalendar()
   const [isModalOpen, setModalOpen] = useState(false)
 
   return (
@@ -32,7 +34,13 @@ export default function TodayView({ session }) {
       {!isSupabaseConfigured && <DemoBanner />}
 
       <FocusSection tasks={focusTasks} />
-      <Timeline events={timeline} />
+      <Timeline
+        status={calendar.status}
+        events={calendar.events}
+        fallbackEvents={timeline}
+        error={calendar.error}
+        onConnect={calendar.connect}
+      />
 
       {error && (
         <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
