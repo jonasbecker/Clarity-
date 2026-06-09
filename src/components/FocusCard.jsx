@@ -23,10 +23,16 @@ export default function FocusCard({ task }) {
         </span>
         <h3 className="mt-1 font-medium leading-snug">{task.title}</h3>
 
-        {/* Fälligkeit, falls vorhanden — sonst dezenter Hinweis */}
+        {/* KI-Begründung, falls vorhanden — sonst Fälligkeit */}
         <div className="mt-3 inline-flex items-center gap-1 text-xs text-ink-soft">
           <CalendarClock size={14} strokeWidth={2} />
-          <span>{task.due ? `Fällig: ${task.due}` : 'Kein Datum'}</span>
+          <span>
+            {task.reason
+              ? task.reason
+              : task.due
+                ? `Fällig: ${task.due}`
+                : 'Kein Datum'}
+          </span>
         </div>
       </div>
     </div>

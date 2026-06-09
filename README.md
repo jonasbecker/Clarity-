@@ -97,12 +97,32 @@ verbinden"**. Beim ersten Mal zeigt Google evtl. „App nicht verifiziert" →
 > Nur **Lesezugriff** (`calendar.readonly`). Im Test-Modus gilt die Verbindung
 > etwa eine Stunde, danach einfach erneut verbinden.
 
+## KI-Priorisierung mit Groq (optional)
+
+„Dein Fokus heute" sortiert standardmäßig nach Dringlichkeit. Mit einem
+kostenlosen **Groq**-Key kannst du per Knopf **„KI-Plan"** eine echte
+KI-Priorisierung + Tagesüberblick erzeugen. Der Key bleibt geheim, weil der
+Aufruf über die Server-Funktion [`api/prioritize.js`](api/prioritize.js)
+läuft (nicht im Browser).
+
+1. Kostenlosen Key holen auf [console.groq.com/keys](https://console.groq.com/keys).
+2. Bei **Vercel** als Environment Variable hinterlegen — **ohne** `VITE_`-Präfix:
+   - Key: `GROQ_API_KEY` · Value: dein Groq-Key
+   - (optional `GROQ_MODEL`, Standard `llama-3.3-70b-versatile`)
+3. Einmal neu deployen (*Deployments → ⋯ → Redeploy*).
+
+> Die KI-Funktion läuft nur auf der **veröffentlichten Seite** (Vercel), nicht
+> im lokalen `npm run dev` — dort fehlt die Server-Funktion. Zum lokalen Testen
+> ginge `vercel dev`. Ohne Key zeigt der Knopf einen freundlichen Hinweis und
+> die Heuristik bleibt aktiv.
+
 ## Nächste Phasen
 
 | Phase | Inhalt |
 |-------|--------|
 | 1 ✅  | Fundament + Heute-View mit Dummy-Daten |
-| 2 🚧  | Tasks speichern + Login (Supabase) · Google Calendar (Timeline) |
+| 2 ✅  | Tasks speichern + Login (Supabase) · Google Calendar (Timeline) |
+| 3 🚧  | KI-Priorisierung + Tagesüberblick (Groq, serverless) |
 | 3     | KI-Kern: Auto-Priorisierung + Tagesplan-Vorschlag |
 | 4     | Voice Capture, Muster-Erkennung, Focus Mode |
 | 5     | Deployment, Login, Onboarding |

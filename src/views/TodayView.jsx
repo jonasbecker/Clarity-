@@ -9,6 +9,7 @@ import FocusMode from '../components/FocusMode.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
+import { useAiPlan } from '../lib/useAiPlan.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, timeline } from '../data/dummyData.js'
@@ -21,13 +22,25 @@ export default function TodayView({ session }) {
   const { tasks, loading, error, addTask, editTask, toggleTask, removeTask } =
     useTasks(session)
   const calendar = useGoogleCalendar()
+  const ai = useAiPlan()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
 
-  const focus = selectFocusTasks(tasks)
+  // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
+  const openTasks = tasks.filter((t) => !t.done)
+  const aiFocus =
+    ai.status === 'ready' && ai.plan?.focus?.length
+      ? ai.plan.focus
+          .map((f) => {
+            const t = tasks.find((x) => x.id === f.id)
+            return t ? { ...t, reason: f.reason } : null
+          })
+          .filter(Boolean)
+      : null
+  const focus = aiFocus ?? selectFocusTasks(tasks)
 
   function openCreate() {
     setEditing(null)
@@ -53,7 +66,16 @@ export default function TodayView({ session }) {
       {!isSupabaseConfigured && <DemoBanner />}
 
       {!loading && (
-        <FocusSection tasks={focus} onStartFocus={() => setFocusOpen(true)} />
+        <FocusSection
+          tasks={focus}
+          summary={ai.status === 'ready' ? ai.plan?.summary : null}
+          aiStatus={ai.status}
+          aiError={ai.error}
+          onGenerate={() =>
+            ai.generate({ tasks: openTasks, events: calendar.events })
+          }
+          onStartFocus={() => setFocusOpen(true)}
+        />
       )}
 
       <Timeline
