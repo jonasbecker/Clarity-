@@ -12,11 +12,17 @@
     <title>Clarity</title>
     <script>
       // Theme früh setzen, damit beim Laden kein heller Blitz im Dark Mode
-      // erscheint. Liest dieselbe Quelle wie lib/useTheme.js.
+      // erscheint. Liest dieselbe Quelle wie lib/useTheme.js. Die
+      // theme-color-Meta zieht mit, damit auch die Browser-/Status-Leiste
+      // zum Dark Mode passt.
       try {
         var t = localStorage.getItem('clarity-theme')
-        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches))
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark')
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', '#0f0f10')
+        }
       } catch (e) {}
     </script>
   </head>

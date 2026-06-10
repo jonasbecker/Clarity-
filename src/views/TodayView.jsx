@@ -91,7 +91,7 @@ export default function TodayView({ session }) {
       />
 
       {error && (
-        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+        <p className="mb-4 rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger">
           Fehler beim Laden: {error}
         </p>
       )}

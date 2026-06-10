@@ -20,9 +20,13 @@ function initialTheme() {
 export function useTheme() {
   const [theme, setTheme] = useState(initialTheme)
 
-  // Bei jeder Änderung die Klasse setzen und merken.
+  // Bei jeder Änderung die Klasse setzen, merken und die theme-color-Meta
+  // anpassen, damit die Browser-/Status-Leiste mitzieht.
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', theme === 'dark' ? '#0f0f10' : '#fafaf9')
     try {
       localStorage.setItem(KEY, theme)
     } catch {

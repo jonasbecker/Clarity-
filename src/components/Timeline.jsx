@@ -61,7 +61,7 @@ function ConnectCard({ onConnect, error }) {
         Zeig deine echten Termine von heute hier in der Timeline. Nur Lesezugriff.
       </p>
       {error && (
-        <p className="mt-3 text-sm text-red-500">{error}</p>
+        <p className="mt-3 text-sm text-danger">{error}</p>
       )}
       <button
         type="button"

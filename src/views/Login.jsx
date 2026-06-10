@@ -78,7 +78,7 @@ export default function Login() {
             className="mb-4 w-full rounded-xl border border-line bg-canvas px-4 py-3 outline-none focus:border-ink/30"
           />
 
-          {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+          {error && <p className="mb-3 text-sm text-danger">{error}</p>}
           {message && <p className="mb-3 text-sm text-area-private">{message}</p>}
 
           <button

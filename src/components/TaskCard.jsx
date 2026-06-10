@@ -49,7 +49,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
       {dueLabel && (
         <span
           className={`shrink-0 self-start rounded-full px-2 py-0.5 text-xs ${
-            overdue ? 'bg-red-50 text-red-500' : 'bg-canvas text-ink-soft'
+            overdue ? 'bg-danger-bg text-danger' : 'bg-canvas text-ink-soft'
           }`}
         >
           {dueLabel}
@@ -60,7 +60,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
         type="button"
         onClick={() => onDelete(task.id)}
         aria-label="Task löschen"
-        className="shrink-0 self-start text-ink-soft opacity-60 transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
+        className="shrink-0 self-start text-ink-soft opacity-60 transition-opacity hover:text-danger sm:opacity-0 sm:group-hover:opacity-100"
       >
         <Trash2 size={15} />
       </button>

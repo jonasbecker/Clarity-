@@ -119,7 +119,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
                   size={18}
                   className={
                     speech.listening
-                      ? 'animate-pulse text-red-500'
+                      ? 'animate-pulse text-danger'
                       : 'text-ink-soft'
                   }
                 />
@@ -224,7 +224,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
                 onDelete(task.id)
                 onClose()
               }}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger-bg"
             >
               <Trash2 size={15} />
               Task löschen

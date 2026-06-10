@@ -58,7 +58,7 @@ export default function FocusSection({
       )}
 
       {aiError && (
-        <p className="mb-3 text-sm text-red-500">KI: {aiError}</p>
+        <p className="mb-3 text-sm text-danger">KI: {aiError}</p>
       )}
 
       {tasks.length === 0 ? (
