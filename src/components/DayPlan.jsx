@@ -14,6 +14,7 @@ import {
 import SectionTitle from './SectionTitle.jsx'
 import { SkeletonLine } from './Skeleton.jsx'
 import { areas } from '../data/dummyData.js'
+import { useCollapsible } from '../lib/useCollapsible.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { isoInDays, formatDueLabel } from '../lib/date.js'
@@ -50,6 +51,7 @@ export default function DayPlan({
   const aiLoading = ai.status === 'loading'
   const [view, setView] = useState('today') // 'today' | 'week'
   const [draggedId, setDraggedId] = useState(null)
+  const { open, toggle } = useCollapsible('dayplan', true)
 
   // Termine pro Tag aus der Map ziehen: heute = offset 0, Folgetage 1..n.
   const todayEvents = eventsByDate[isoInDays(0)] || []
@@ -99,6 +101,9 @@ export default function DayPlan({
   return (
     <section className="mb-10">
       <SectionTitle
+        collapsible
+        open={open}
+        onToggle={toggle}
         aside={
           tasks.length > 0 ? (
             <span className="inline-flex items-center gap-2">
@@ -132,83 +137,87 @@ export default function DayPlan({
         Dein Tagesplan
       </SectionTitle>
 
-      {/* Arbeitszeit-Fenster + Ansicht-Umschalter */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-        <span>Arbeitszeit</span>
-        <input
-          type="time"
-          value={prefs.workStart}
-          onChange={(e) => prefs.setWorkStart(e.target.value)}
-          aria-label="Arbeitsbeginn"
-          className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
-        />
-        <span>–</span>
-        <input
-          type="time"
-          value={prefs.workEnd}
-          onChange={(e) => prefs.setWorkEnd(e.target.value)}
-          aria-label="Arbeitsende"
-          className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
-        />
+      {open && (
+        <>
+          {/* Arbeitszeit-Fenster + Ansicht-Umschalter */}
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
+            <span>Arbeitszeit</span>
+            <input
+              type="time"
+              value={prefs.workStart}
+              onChange={(e) => prefs.setWorkStart(e.target.value)}
+              aria-label="Arbeitsbeginn"
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
+            />
+            <span>–</span>
+            <input
+              type="time"
+              value={prefs.workEnd}
+              onChange={(e) => prefs.setWorkEnd(e.target.value)}
+              aria-label="Arbeitsende"
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
+            />
 
-        <div className="ml-auto inline-flex rounded-full border border-line p-0.5">
-          {[
-            { id: 'today', label: 'Heute' },
-            { id: 'week', label: 'Woche' },
-          ].map((v) => (
+            <div className="ml-auto inline-flex rounded-full border border-line p-0.5">
+              {[
+                { id: 'today', label: 'Heute' },
+                { id: 'week', label: 'Woche' },
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setView(v.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
+
+          {view === 'today' ? (
+            <TodayPlan
+              ordered={ordered}
+              events={todayEvents}
+              prefs={prefs}
+              nowMin={nowMin}
+              seq={seq}
+              onToggle={onToggle}
+              onMove={move}
+              tasksCount={tasks.length}
+              draggedId={draggedId}
+              setDraggedId={setDraggedId}
+              handleDrop={handleDrop}
+            />
+          ) : (
+            <WeekPlan
+              ordered={ordered}
+              dayEvents={dayEvents}
+              prefs={prefs}
+              nowMin={nowMin}
+              seq={seq}
+              onToggle={onToggle}
+              onMove={move}
+              dayCount={dayCount}
+            />
+          )}
+
+          {/* Tipp: echten Kalender verbinden */}
+          {(calendarStatus === 'idle' || calendarStatus === 'error') && (
             <button
-              key={v.id}
               type="button"
-              onClick={() => setView(v.id)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink'
-              }`}
+              onClick={onConnect}
+              className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
             >
-              {v.label}
+              <CalendarPlus size={15} />
+              Google Kalender verbinden, um echte Termine einzuplanen
             </button>
-          ))}
-        </div>
-      </div>
-
-      {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
-
-      {view === 'today' ? (
-        <TodayPlan
-          ordered={ordered}
-          events={todayEvents}
-          prefs={prefs}
-          nowMin={nowMin}
-          seq={seq}
-          onToggle={onToggle}
-          onMove={move}
-          tasksCount={tasks.length}
-          draggedId={draggedId}
-          setDraggedId={setDraggedId}
-          handleDrop={handleDrop}
-        />
-      ) : (
-        <WeekPlan
-          ordered={ordered}
-          dayEvents={dayEvents}
-          prefs={prefs}
-          nowMin={nowMin}
-          seq={seq}
-          onToggle={onToggle}
-          onMove={move}
-          dayCount={dayCount}
-        />
-      )}
-
-      {/* Tipp: echten Kalender verbinden */}
-      {(calendarStatus === 'idle' || calendarStatus === 'error') && (
-        <button
-          type="button"
-          onClick={onConnect}
-          className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
-        >
-          <CalendarPlus size={15} />
-          Google Kalender verbinden, um echte Termine einzuplanen
-        </button>
+          )}
+        </>
       )}
     </section>
   )

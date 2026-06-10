@@ -110,6 +110,9 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   viele der heute fälligen Tasks schon erledigt sind.
 - **Polish**: Lade-Skeletons statt „Lädt …", freundlichere Empty-States mit
   Icons sowie sanfte Animationen beim Erscheinen neuer Tasks und beim Abhaken.
+- **Einklappbar**: „Dein Fokus heute" und „Dein Tagesplan" lassen sich per
+  Klick auf die Überschrift einklappen — gemerkt im Browser, für eine
+  schlankere Seite.
 
 ## Tasks speichern mit Supabase (optional)
 

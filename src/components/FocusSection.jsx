@@ -2,6 +2,7 @@ import { Play, Sparkles, Loader2, Coffee } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import FocusCard from './FocusCard.jsx'
 import { SkeletonCard } from './Skeleton.jsx'
+import { useCollapsible } from '../lib/useCollapsible.js'
 
 // "Dein Fokus heute": die wichtigsten offenen Tasks.
 // Standardmäßig nach Dringlichkeit sortiert; per "KI-Plan"-Knopf lässt du
@@ -16,6 +17,7 @@ export default function FocusSection({
   onStartFocus,
 }) {
   const aiLoading = aiStatus === 'loading'
+  const { open, toggle } = useCollapsible('focus', true)
 
   if (loading) {
     return (
@@ -33,6 +35,9 @@ export default function FocusSection({
   return (
     <section className="mb-10">
       <SectionTitle
+        collapsible
+        open={open}
+        onToggle={toggle}
         aside={
           tasks.length > 0 ? (
             <span className="inline-flex items-center gap-2">
@@ -64,29 +69,33 @@ export default function FocusSection({
         Dein Fokus heute
       </SectionTitle>
 
-      {/* KI-Tagesüberblick, wenn vorhanden */}
-      {summary && (
-        <div className="mb-3 flex items-start gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
-          <Sparkles size={15} className="mt-0.5 shrink-0 text-area-study" />
-          <p>{summary}</p>
-        </div>
-      )}
+      {open && (
+        <>
+          {/* KI-Tagesüberblick, wenn vorhanden */}
+          {summary && (
+            <div className="mb-3 flex items-start gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
+              <Sparkles size={15} className="mt-0.5 shrink-0 text-area-study" />
+              <p>{summary}</p>
+            </div>
+          )}
 
-      {aiError && (
-        <p className="mb-3 text-sm text-danger">KI: {aiError}</p>
-      )}
+          {aiError && (
+            <p className="mb-3 text-sm text-danger">KI: {aiError}</p>
+          )}
 
-      {tasks.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
-          <Coffee size={20} />
-          <p>Nichts Dringendes offen — schön! Neue Tasks erfasst du unten mit „+".</p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {tasks.map((task) => (
-            <FocusCard key={task.id} task={task} />
-          ))}
-        </div>
+          {tasks.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+              <Coffee size={20} />
+              <p>Nichts Dringendes offen — schön! Neue Tasks erfasst du unten mit „+".</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {tasks.map((task) => (
+                <FocusCard key={task.id} task={task} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   )
