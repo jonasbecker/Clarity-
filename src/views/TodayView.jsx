@@ -17,6 +17,8 @@ import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
+import { orderedPlanTasks } from '../lib/planTasks.js'
+import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
 import { toISODate } from '../lib/date.js'
@@ -76,6 +78,27 @@ export default function TodayView({ session }) {
         }, {})
       : { [todayISO]: timeline }
   const todayEvents = eventsByDate[todayISO] || []
+
+  // Fokus-Modus an den Tagesplan koppeln: die heute noch anstehenden Blöcke
+  // in genau der geplanten Reihenfolge durchgehen. Fällt der Plan leer aus
+  // (außerhalb der Arbeitszeit o.ä.), nehmen wir die "Fokus heute"-Auswahl.
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+  const { ordered: orderedPlan } = orderedPlanTasks(
+    openTasks,
+    ai.plan,
+    ai.status,
+    planOrder.order,
+  )
+  const planFocus = buildSchedule({
+    tasks: orderedPlan,
+    events: todayEvents,
+    workStart: planPrefs.workStart,
+    workEnd: planPrefs.workEnd,
+    now: nowMin,
+  })
+    .blocks.filter((b) => b.end > nowMin)
+    .map((b) => ({ ...b.task, planStart: b.start, planEnd: b.end }))
+  const focusQueue = planFocus.length ? planFocus : focus
 
   function openCreate() {
     setEditing(null)
@@ -165,7 +188,7 @@ export default function TodayView({ session }) {
 
       {focusOpen && (
         <FocusMode
-          tasks={focus}
+          tasks={focusQueue}
           onToggle={toggleTask}
           onClose={() => setFocusOpen(false)}
         />

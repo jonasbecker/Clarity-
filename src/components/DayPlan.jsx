@@ -11,8 +11,8 @@ import {
 } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import { areas } from '../data/dummyData.js'
-import { orderForToday } from '../lib/focus.js'
-import { applyOrder, moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
+import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
+import { orderedPlanTasks } from '../lib/planTasks.js'
 import { isoInDays, formatDueLabel } from '../lib/date.js'
 import {
   buildSchedule,
@@ -54,23 +54,14 @@ export default function DayPlan({
     (_, d) => eventsByDate[isoInDays(d)] || [],
   )
 
-  // Reihenfolge + Dauer: KI-Plan, wenn vorhanden — sonst nach Dringlichkeit.
-  const aiSchedule =
-    ai.status === 'ready' && Array.isArray(ai.plan?.schedule) && ai.plan.schedule.length
-      ? ai.plan.schedule
-          .map((s) => {
-            const t = tasks.find((x) => x.id === s.id && !x.done)
-            return t
-              ? { ...t, duration_min: s.duration_min || t.duration_min, reason: s.reason }
-              : null
-          })
-          .filter(Boolean)
-      : null
-  const aiActive = Boolean(aiSchedule)
-
-  // Deine manuelle Reihenfolge hat Vorrang, sonst KI/Heuristik.
-  const base = aiSchedule ?? orderForToday(tasks)
-  const ordered = applyOrder(base, planOrder.order)
+  // Reihenfolge: KI/Heuristik, überschrieben von deiner manuellen Reihenfolge.
+  // Geteilte Logik mit dem Fokus-Modus (lib/planTasks.js).
+  const { ordered, aiActive } = orderedPlanTasks(
+    tasks,
+    ai.plan,
+    ai.status,
+    planOrder.order,
+  )
   const manual = Boolean(planOrder.order)
 
   // ids der Task-Reihenfolge — Basis fürs Umsortieren (global, auch über Tage).

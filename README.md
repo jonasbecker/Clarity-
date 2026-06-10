@@ -91,7 +91,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Rückgängig**: gelöschte Tasks lassen sich kurz danach per Toast
   wiederherstellen.
 - **Dark Mode**, **Voice Capture** (Task per Spracheingabe) und
-  **Focus Mode** (eine Task im Vollbild).
+  **Focus Mode** (eine Task im Vollbild). Der Focus Mode folgt dem Tagesplan:
+  er geht die heute noch anstehenden Blöcke in geplanter Reihenfolge durch und
+  zeigt je Task ihren geplanten Zeit-Slot.
+- Im **Tagesplan** sind bereits vergangene Slots ausgegraut, der laufende
+  Block ist mit „Jetzt" markiert.
 
 ## Tasks speichern mit Supabase (optional)
 

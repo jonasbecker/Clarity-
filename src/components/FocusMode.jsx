@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, X, ArrowRight } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel } from '../lib/date.js'
+import { toHHMM } from '../lib/scheduler.js'
 
 // Fokus-Modus: eine Task groß, alles andere ausgeblendet.
 //
@@ -67,10 +68,16 @@ export default function FocusMode({ tasks, onToggle, onClose }) {
             {task.description && (
               <p className="mt-3 max-w-md text-ink-soft">{task.description}</p>
             )}
-            {task.due_date && (
-              <p className="mt-3 text-sm text-ink-soft">
-                Fällig: {formatDueLabel(task.due_date)}
+            {task.planStart != null ? (
+              <p className="mt-3 text-sm font-medium text-area-study">
+                Geplant: {toHHMM(task.planStart)}–{toHHMM(task.planEnd)}
               </p>
+            ) : (
+              task.due_date && (
+                <p className="mt-3 text-sm text-ink-soft">
+                  Fällig: {formatDueLabel(task.due_date)}
+                </p>
+              )
             )}
           </>
         )}
