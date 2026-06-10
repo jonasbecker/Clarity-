@@ -4,6 +4,14 @@ import { areas } from '../data/dummyData.js'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 
+// Wiederholung: beim Abhaken legt useTasks automatisch die nächste Instanz
+// mit passender Fälligkeit an (1 Tag bzw. 1 Woche weiter).
+const REPEATS = [
+  { id: null, label: 'Einmalig' },
+  { id: 'daily', label: 'Täglich' },
+  { id: 'weekly', label: 'Wöchentlich' },
+]
+
 // Formular zum Erfassen ODER Bearbeiten einer Task.
 //
 // Ein Modal für beides: ohne `task` ist es "neu", mit `task` ist es
@@ -25,6 +33,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   const [area, setArea] = useState('study')
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
+  const [repeat, setRepeat] = useState(null) // null | 'daily' | 'weekly'
 
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
   const speech = useSpeech({ onResult: (text) => setTitle(text) })
@@ -36,6 +45,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
     setArea(task?.area ?? 'study')
     setDueDate(task?.due_date ?? null)
     setDescription(task?.description ?? '')
+    setRepeat(task?.repeat ?? null)
   }, [open, task])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
@@ -64,6 +74,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
       area,
       due_date: dueDate,
       description: description.trim() || null,
+      repeat,
     })
     onClose()
   }
@@ -206,6 +217,30 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
             onChange={(e) => setDueDate(e.target.value || null)}
             className="mt-2 w-full rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
           />
+
+          {/* Wiederholung */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Wiederholung
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {REPEATS.map((r) => {
+              const active = repeat === r.id
+              return (
+                <button
+                  key={r.label}
+                  type="button"
+                  onClick={() => setRepeat(r.id)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              )
+            })}
+          </div>
 
           {/* Absenden */}
           <button

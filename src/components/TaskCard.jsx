@@ -1,4 +1,4 @@
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Repeat, Trash2 } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 
@@ -45,6 +45,18 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
           </span>
         )}
       </button>
+
+      {task.repeat && (
+        <span
+          className="shrink-0 self-start pt-0.5 text-ink-soft"
+          title={task.repeat === 'daily' ? 'Wiederholt sich täglich' : 'Wiederholt sich wöchentlich'}
+        >
+          <Repeat size={13} aria-hidden="true" />
+          <span className="sr-only">
+            Wiederholt sich {task.repeat === 'daily' ? 'täglich' : 'wöchentlich'}
+          </span>
+        </span>
+      )}
 
       {dueLabel && (
         <span

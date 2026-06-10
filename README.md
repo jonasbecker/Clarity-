@@ -45,8 +45,24 @@ Google Calendar) — die UI bleibt unverändert.
 1. **Header** — Begrüßung + heutiges Datum
 2. **Dein Fokus heute** — 3 KI-vorgeschlagene Top-Tasks
 3. **Dein Tag** — kompakte Timeline mit Terminen
-4. **Offene Tasks** — gruppiert nach Studium / Arbeit / Privat (je eigener Akzent)
-5. **+ Task** — schwebender Button zum Erfassen (Phase 1: nur UI)
+4. **Offene Tasks** — gruppiert nach Studium / Arbeit / Privat (je eigener Akzent),
+   mit Suche und Bereichsfilter
+5. **+ Task** — schwebender Button zum Erfassen
+
+## Weitere Funktionen
+
+- **Wiederkehrende Tasks**: beim Anlegen/Bearbeiten "Täglich" oder
+  "Wöchentlich" wählen — nach dem Abhaken erscheint automatisch die nächste
+  Instanz mit passender Fälligkeit.
+- **Erinnerungen**: optionale Browser-Benachrichtigung beim Öffnen, wenn
+  Tasks für heute fällig oder überfällig sind (höchstens einmal pro Tag).
+- **Wochenrückblick**: zeigt, wie viele Tasks die letzten 7 Tage erledigt
+  wurden — pro Bereich und als Streak.
+- **Suche & Filter**: Tasks per Stichwort oder Bereich filtern.
+- **Rückgängig**: gelöschte Tasks lassen sich kurz danach per Toast
+  wiederherstellen.
+- **Dark Mode**, **Voice Capture** (Task per Spracheingabe) und
+  **Focus Mode** (eine Task im Vollbild).
 
 ## Tasks speichern mit Supabase (optional)
 
@@ -122,7 +138,6 @@ läuft (nicht im Browser).
 |-------|--------|
 | 1 ✅  | Fundament + Heute-View mit Dummy-Daten |
 | 2 ✅  | Tasks speichern + Login (Supabase) · Google Calendar (Timeline) |
-| 3 🚧  | KI-Priorisierung + Tagesüberblick (Groq, serverless) |
-| 3     | KI-Kern: Auto-Priorisierung + Tagesplan-Vorschlag |
-| 4     | Voice Capture, Muster-Erkennung, Focus Mode |
-| 5     | Deployment, Login, Onboarding |
+| 3 ✅  | KI-Priorisierung + Tagesüberblick (Groq, serverless) |
+| 4 ✅  | Voice Capture, Focus Mode, Dark Mode, wiederkehrende Tasks, Erinnerungen, Wochenrückblick, Suche/Filter, Undo |
+| 5     | Onboarding, tiefere Mustererkennung |

@@ -17,7 +17,9 @@ create table if not exists public.tasks (
   area        text not null check (area in ('study', 'work', 'private')),
   due_date    date,        -- Fälligkeit als echtes Datum (optional)
   description text,         -- Beschreibung (optional)
+  repeat      text,        -- Wiederholung: null, 'daily' oder 'weekly'
   done        boolean not null default false,
+  completed_at timestamptz, -- wann zuletzt erledigt (für Wochenrückblick)
   inserted_at timestamptz not null default now()
 );
 
@@ -25,6 +27,13 @@ create table if not exists public.tasks (
 -- nachträglich ergänzen.
 alter table public.tasks add column if not exists due_date date;
 alter table public.tasks add column if not exists description text;
+alter table public.tasks add column if not exists repeat text;
+alter table public.tasks add column if not exists completed_at timestamptz;
+
+-- Nur erlaubte Werte für die Wiederholung.
+alter table public.tasks drop constraint if exists tasks_repeat_check;
+alter table public.tasks add constraint tasks_repeat_check
+  check (repeat is null or repeat in ('daily', 'weekly'));
 
 -- Row Level Security: ohne passende Regel sieht niemand etwas.
 alter table public.tasks enable row level security;

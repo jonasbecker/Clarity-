@@ -35,6 +35,14 @@ export function isoInDays(n) {
   return toISODate(d)
 }
 
+// ISO-Datum + n Tage (für wiederkehrende Tasks: nächste Fälligkeit).
+export function addDaysToISO(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + n)
+  return toISODate(date)
+}
+
 // Ganze Tage von heute bis zum Datum (negativ = Vergangenheit, null = keins).
 export function daysUntil(iso) {
   if (!iso) return null

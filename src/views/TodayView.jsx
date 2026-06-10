@@ -7,11 +7,16 @@ import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
+import ReminderBanner from '../components/ReminderBanner.jsx'
+import WeekReview from '../components/WeekReview.jsx'
+import Toast from '../components/Toast.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useTheme } from '../lib/useTheme.js'
+import { useNotifications } from '../lib/useNotifications.js'
 import { selectFocusTasks } from '../lib/focus.js'
+import { weekStats } from '../lib/stats.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, timeline } from '../data/dummyData.js'
 
@@ -20,11 +25,21 @@ import { user, timeline } from '../data/dummyData.js'
 // Tasks kommen aus useTasks (Supabase oder Demo), die Timeline aus
 // useGoogleCalendar, "Fokus heute" wird aus den echten Tasks abgeleitet.
 export default function TodayView({ session }) {
-  const { tasks, loading, error, addTask, editTask, toggleTask, removeTask } =
-    useTasks(session)
+  const {
+    tasks,
+    loading,
+    error,
+    addTask,
+    editTask,
+    toggleTask,
+    removeTask,
+    pendingDelete,
+    undoDelete,
+  } = useTasks(session)
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
   const { theme, toggle: toggleTheme } = useTheme()
+  const notifications = useNotifications(tasks, loading)
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -43,6 +58,7 @@ export default function TodayView({ session }) {
           .filter(Boolean)
       : null
   const focus = aiFocus ?? selectFocusTasks(tasks)
+  const stats = weekStats(tasks)
 
   function openCreate() {
     setEditing(null)
@@ -68,6 +84,14 @@ export default function TodayView({ session }) {
       />
 
       {!isSupabaseConfigured && <DemoBanner />}
+
+      <ReminderBanner
+        supported={notifications.supported}
+        permission={notifications.permission}
+        onEnable={notifications.enable}
+      />
+
+      {!loading && <WeekReview stats={stats} />}
 
       {!loading && (
         <FocusSection
@@ -119,6 +143,14 @@ export default function TodayView({ session }) {
           tasks={focus}
           onToggle={toggleTask}
           onClose={() => setFocusOpen(false)}
+        />
+      )}
+
+      {pendingDelete && (
+        <Toast
+          message={`„${pendingDelete.task.title}" gelöscht`}
+          actionLabel="Rückgängig"
+          onAction={undoDelete}
         />
       )}
     </main>
