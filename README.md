@@ -76,7 +76,9 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Mit verbundenem Google Kalender plant Clarity **jeden** Tag um die echten
   Termine herum (es lädt die nächsten 7 Tage), nicht nur heute.
 - Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
-  herum; ohne dienen Beispiel-Termine als Demo.
+  herum; ohne dienen Beispiel-Termine als Demo. Die Termine werden im
+  Hintergrund automatisch aktualisiert (in Intervallen und beim Zurückkehren
+  zur App), damit neue Meetings ohne Neuladen im Plan landen.
 
 ## Weitere Funktionen
 
