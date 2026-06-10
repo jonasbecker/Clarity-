@@ -13,8 +13,10 @@ import SectionTitle from './SectionTitle.jsx'
 import { areas } from '../data/dummyData.js'
 import { orderForToday } from '../lib/focus.js'
 import { applyOrder, moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
+import { isoInDays, formatDueLabel } from '../lib/date.js'
 import {
   buildSchedule,
+  buildWeek,
   toMinutes,
   toHHMM,
   formatDuration,
@@ -25,8 +27,10 @@ import {
 // Legt deine offenen Tasks automatisch als Zeitblöcke in die freien Lücken
 // zwischen deinen Terminen, innerhalb deines Arbeitszeit-Fensters. Die
 // Reihenfolge/Dauer kommt aus der Heuristik (immer da), aus der KI (Knopf)
-// — oder von dir: per Drag & Drop bzw. Hoch/Runter ziehst du Tasks um, der
-// Scheduler packt die Zeiten neu drumherum.
+// — oder von dir: per Drag & Drop bzw. Hoch/Runter ziehst du Tasks um.
+//
+// Zwei Ansichten: "Heute" (mit Terminen, Drag & Drop) und "Woche" (Tasks
+// über mehrere Tage verteilt — was heute nicht passt, rutscht weiter).
 export default function DayPlan({
   tasks,
   events,
@@ -39,6 +43,7 @@ export default function DayPlan({
   planOrder,
 }) {
   const aiLoading = ai.status === 'loading'
+  const [view, setView] = useState('today') // 'today' | 'week'
   const [draggedId, setDraggedId] = useState(null)
 
   // Reihenfolge + Dauer: KI-Plan, wenn vorhanden — sonst nach Dringlichkeit.
@@ -60,7 +65,7 @@ export default function DayPlan({
   const ordered = applyOrder(base, planOrder.order)
   const manual = Boolean(planOrder.order)
 
-  // ids der Task-Reihenfolge — Basis fürs Umsortieren.
+  // ids der Task-Reihenfolge — Basis fürs Umsortieren (global, auch über Tage).
   const seq = ordered.map((t) => t.id)
   const move = (id, dir) => planOrder.setOrder(moveInOrder(seq, id, dir))
   const handleDrop = (targetId) => {
@@ -69,33 +74,7 @@ export default function DayPlan({
   }
 
   const now = new Date()
-  const { blocks, unscheduled } = buildSchedule({
-    tasks: ordered,
-    events,
-    workStart: prefs.workStart,
-    workEnd: prefs.workEnd,
-    now: now.getHours() * 60 + now.getMinutes(),
-  })
-
-  // Termine + geplante Task-Blöcke zu einer Agenda mischen, nach Zeit sortiert.
-  const timedEvents = events.filter((e) => !e.allDay && e.start)
-  const allDayEvents = events.filter((e) => e.allDay)
-  const agenda = [
-    ...timedEvents.map((e) => ({
-      kind: 'event',
-      start: toMinutes(e.start),
-      label: e.start,
-      title: e.title,
-    })),
-    ...blocks.map((b) => ({
-      kind: 'task',
-      start: b.start,
-      label: toHHMM(b.start),
-      end: toHHMM(b.end),
-      task: b.task,
-      reason: b.task.reason,
-    })),
-  ].sort((a, b) => a.start - b.start)
+  const nowMin = now.getHours() * 60 + now.getMinutes()
 
   return (
     <section className="mb-10">
@@ -133,8 +112,8 @@ export default function DayPlan({
         Dein Tagesplan
       </SectionTitle>
 
-      {/* Arbeitszeit-Fenster */}
-      <div className="mb-3 flex items-center gap-2 text-sm text-ink-soft">
+      {/* Arbeitszeit-Fenster + Ansicht-Umschalter */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
         <span>Arbeitszeit</span>
         <input
           type="time"
@@ -151,76 +130,52 @@ export default function DayPlan({
           aria-label="Arbeitsende"
           className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
         />
-      </div>
 
-      {/* Ganztägige Termine als Hinweis */}
-      {allDayEvents.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {allDayEvents.map((e) => (
-            <span
-              key={e.id}
-              className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink-soft"
+        <div className="ml-auto inline-flex rounded-full border border-line p-0.5">
+          {[
+            { id: 'today', label: 'Heute' },
+            { id: 'week', label: 'Woche' },
+          ].map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setView(v.id)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink'
+              }`}
             >
-              📌 {e.title}
-            </span>
+              {v.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
 
       {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
 
-      {agenda.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          {tasks.length === 0
-            ? 'Keine offenen Tasks — nichts zu planen. Genieß den Tag ✨'
-            : 'Außerhalb deiner Arbeitszeit — passe das Fenster oben an, um zu planen.'}
-        </p>
+      {view === 'today' ? (
+        <TodayPlan
+          ordered={ordered}
+          events={events}
+          prefs={prefs}
+          nowMin={nowMin}
+          seq={seq}
+          onToggle={onToggle}
+          onMove={move}
+          tasksCount={tasks.length}
+          draggedId={draggedId}
+          setDraggedId={setDraggedId}
+          handleDrop={handleDrop}
+        />
       ) : (
-        <ul className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
-          {agenda.map((item, i) =>
-            item.kind === 'event' ? (
-              <EventRow key={`e${i}`} item={item} last={i === agenda.length - 1} />
-            ) : (
-              <TaskRow
-                key={item.task.id}
-                item={item}
-                last={i === agenda.length - 1}
-                onToggle={onToggle}
-                onMove={move}
-                pos={seq.indexOf(item.task.id)}
-                total={seq.length}
-                dragging={draggedId === item.task.id}
-                onDragStart={() => setDraggedId(item.task.id)}
-                onDragEnd={() => setDraggedId(null)}
-                onDrop={() => handleDrop(item.task.id)}
-              />
-            ),
-          )}
-        </ul>
-      )}
-
-      {/* Was heute nicht mehr reinpasst */}
-      {unscheduled.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-line bg-surface px-5 py-4">
-          <p className="text-sm font-medium">
-            Passt heute nicht mehr rein ({unscheduled.length})
-          </p>
-          <ul className="mt-2 space-y-1">
-            {unscheduled.map((t) => (
-              <li key={t.id} className="flex items-center gap-2 text-sm text-ink-soft">
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: areas[t.area].color }}
-                  aria-hidden="true"
-                />
-                <span className="truncate">{t.title}</span>
-                <span className="ml-auto shrink-0 text-xs">
-                  {formatDuration(t.duration_min)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <WeekPlan
+          ordered={ordered}
+          events={events}
+          prefs={prefs}
+          nowMin={nowMin}
+          seq={seq}
+          onToggle={onToggle}
+          onMove={move}
+        />
       )}
 
       {/* Tipp: echten Kalender verbinden */}
@@ -235,6 +190,271 @@ export default function DayPlan({
         </button>
       )}
     </section>
+  )
+}
+
+// --- Ansicht "Heute": reicher Zeitstrahl mit Terminen + Drag & Drop ---
+function TodayPlan({
+  ordered,
+  events,
+  prefs,
+  nowMin,
+  seq,
+  onToggle,
+  onMove,
+  tasksCount,
+  draggedId,
+  setDraggedId,
+  handleDrop,
+}) {
+  const { blocks, unscheduled } = buildSchedule({
+    tasks: ordered,
+    events,
+    workStart: prefs.workStart,
+    workEnd: prefs.workEnd,
+    now: nowMin,
+  })
+
+  const timedEvents = events.filter((e) => !e.allDay && e.start)
+  const allDayEvents = events.filter((e) => e.allDay)
+  const agenda = [
+    ...timedEvents.map((e) => ({
+      kind: 'event',
+      start: toMinutes(e.start),
+      label: e.start,
+      title: e.title,
+    })),
+    ...blocks.map((b) => ({
+      kind: 'task',
+      start: b.start,
+      label: toHHMM(b.start),
+      end: toHHMM(b.end),
+      task: b.task,
+      reason: b.task.reason,
+    })),
+  ].sort((a, b) => a.start - b.start)
+
+  return (
+    <>
+      {allDayEvents.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {allDayEvents.map((e) => (
+            <span
+              key={e.id}
+              className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink-soft"
+            >
+              📌 {e.title}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {agenda.length === 0 ? (
+        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
+          {tasksCount === 0
+            ? 'Keine offenen Tasks — nichts zu planen. Genieß den Tag ✨'
+            : 'Außerhalb deiner Arbeitszeit — passe das Fenster oben an, um zu planen.'}
+        </p>
+      ) : (
+        <ul className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
+          {agenda.map((item, i) =>
+            item.kind === 'event' ? (
+              <EventRow key={`e${i}`} item={item} last={i === agenda.length - 1} />
+            ) : (
+              <TaskRow
+                key={item.task.id}
+                item={item}
+                last={i === agenda.length - 1}
+                onToggle={onToggle}
+                onMove={onMove}
+                pos={seq.indexOf(item.task.id)}
+                total={seq.length}
+                dragging={draggedId === item.task.id}
+                onDragStart={() => setDraggedId(item.task.id)}
+                onDragEnd={() => setDraggedId(null)}
+                onDrop={() => handleDrop(item.task.id)}
+              />
+            ),
+          )}
+        </ul>
+      )}
+
+      {unscheduled.length > 0 && (
+        <Overflow tasks={unscheduled} label="Passt heute nicht mehr rein" />
+      )}
+    </>
+  )
+}
+
+// --- Ansicht "Woche": Tasks über mehrere Tage verteilt ---
+function WeekPlan({ ordered, events, prefs, nowMin, seq, onToggle, onMove }) {
+  const { days, unscheduled } = buildWeek({
+    tasks: ordered,
+    todayEvents: events,
+    workStart: prefs.workStart,
+    workEnd: prefs.workEnd,
+    dayCount: 5,
+    now: nowMin,
+  })
+
+  const anyPlanned = days.some((d) => d.blocks.length > 0)
+
+  return (
+    <>
+      {!anyPlanned ? (
+        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
+          Nichts zu planen — alle Tasks erledigt oder kein Platz im Fenster.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {days.map((day) => (
+            <DayCard
+              key={day.offset}
+              day={day}
+              seq={seq}
+              onToggle={onToggle}
+              onMove={onMove}
+            />
+          ))}
+        </div>
+      )}
+
+      {unscheduled.length > 0 && (
+        <Overflow tasks={unscheduled} label="Passt diese Woche nicht rein" />
+      )}
+    </>
+  )
+}
+
+// Eine Tages-Karte in der Wochenansicht: Datum + geplante Blöcke (kompakt).
+function DayCard({ day, seq, onToggle, onMove }) {
+  const label = formatDueLabel(isoInDays(day.offset)) || 'Heute'
+  const total = day.blocks.reduce((s, b) => s + (b.end - b.start), 0)
+
+  const items = [
+    ...day.events
+      .filter((e) => !e.allDay && e.start)
+      .map((e) => ({ kind: 'event', start: toMinutes(e.start), label: e.start, title: e.title })),
+    ...day.blocks.map((b) => ({
+      kind: 'task',
+      start: b.start,
+      label: toHHMM(b.start),
+      end: toHHMM(b.end),
+      task: b.task,
+    })),
+  ].sort((a, b) => a.start - b.start)
+
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+      <div className="mb-2 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold capitalize">{label}</h3>
+        <span className="text-xs text-ink-soft">
+          {total ? formatDuration(total) : 'frei'}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-ink-soft">Nichts geplant.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {items.map((it, i) =>
+            it.kind === 'event' ? (
+              <li
+                key={`e${i}`}
+                className="flex items-center gap-2 text-sm text-ink-soft"
+              >
+                <span className="w-20 shrink-0 text-right tabular-nums">{it.label}</span>
+                <span className="size-2 shrink-0 rounded-full bg-ink-soft" aria-hidden="true" />
+                <span className="min-w-0 truncate">{it.title}</span>
+              </li>
+            ) : (
+              <CompactTaskRow
+                key={it.task.id}
+                item={it}
+                seq={seq}
+                onToggle={onToggle}
+                onMove={onMove}
+              />
+            ),
+          )}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// Kompakte Task-Zeile in der Wochenansicht (mit Hoch/Runter).
+function CompactTaskRow({ item, seq, onToggle, onMove }) {
+  const area = areas[item.task.area]
+  const pos = seq.indexOf(item.task.id)
+  const total = seq.length
+  return (
+    <li className="flex items-center gap-2 text-sm">
+      <span className="w-20 shrink-0 text-right tabular-nums text-ink-soft">
+        {item.label}–{item.end}
+      </span>
+      <button
+        type="button"
+        onClick={() => onToggle(item.task.id)}
+        aria-label="Als erledigt markieren"
+        className="group grid size-4 shrink-0 place-items-center rounded-full border-2 transition-colors"
+        style={{ borderColor: area.color }}
+      >
+        <Check
+          size={10}
+          strokeWidth={3}
+          style={{ color: area.color }}
+          className="opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </button>
+      <span className="min-w-0 flex-1 truncate">{item.task.title}</span>
+      <span className="flex shrink-0 text-ink-soft">
+        <button
+          type="button"
+          onClick={() => onMove(item.task.id, 'up')}
+          disabled={pos <= 0}
+          aria-label="Früher einplanen"
+          className="grid size-6 place-items-center rounded transition-colors hover:text-ink disabled:opacity-25"
+        >
+          <ChevronUp size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(item.task.id, 'down')}
+          disabled={pos >= total - 1}
+          aria-label="Später einplanen"
+          className="grid size-6 place-items-center rounded transition-colors hover:text-ink disabled:opacity-25"
+        >
+          <ChevronDown size={15} />
+        </button>
+      </span>
+    </li>
+  )
+}
+
+// Liste der Tasks, die im geplanten Zeitraum nicht mehr reinpassen.
+function Overflow({ tasks, label }) {
+  return (
+    <div className="mt-3 rounded-2xl border border-line bg-surface px-5 py-4">
+      <p className="text-sm font-medium">
+        {label} ({tasks.length})
+      </p>
+      <ul className="mt-2 space-y-1">
+        {tasks.map((t) => (
+          <li key={t.id} className="flex items-center gap-2 text-sm text-ink-soft">
+            <span
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: areas[t.area].color }}
+              aria-hidden="true"
+            />
+            <span className="truncate">{t.title}</span>
+            <span className="ml-auto shrink-0 text-xs">
+              {formatDuration(t.duration_min)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

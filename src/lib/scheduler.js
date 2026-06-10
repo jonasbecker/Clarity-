@@ -130,3 +130,34 @@ export function buildSchedule({ tasks = [], events = [], workStart = '09:00', wo
 
   return { blocks, unscheduled }
 }
+
+// Mehrtages-Planung: verteilt die Tasks über mehrere Tage. Was an einem Tag
+// nicht mehr reinpasst, wandert auf den nächsten. Heute (offset 0) wird um
+// die echten Termine herum geplant und ab der aktuellen Uhrzeit; Folgetage
+// gegen das volle Arbeitszeit-Fenster (ohne bekannte Termine).
+//
+// Rückgabe: { days: [{ offset, events, blocks }], unscheduled }
+export function buildWeek({
+  tasks = [],
+  todayEvents = [],
+  workStart = '09:00',
+  workEnd = '18:00',
+  dayCount = 5,
+  now = null,
+}) {
+  const days = []
+  let remaining = tasks
+  for (let d = 0; d < dayCount; d++) {
+    const events = d === 0 ? todayEvents : []
+    const { blocks, unscheduled } = buildSchedule({
+      tasks: remaining,
+      events,
+      workStart,
+      workEnd,
+      now: d === 0 ? now : null,
+    })
+    days.push({ offset: d, events, blocks })
+    remaining = unscheduled
+  }
+  return { days, unscheduled: remaining }
+}

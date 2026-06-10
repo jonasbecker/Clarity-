@@ -69,6 +69,10 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Hoch/Runter (überall, auch Touch) umsortieren — der Plan rechnet die Zeiten
   sofort neu. Deine manuelle Reihenfolge gilt für den Tag; „Auto" setzt sie
   zurück. Die Blöcke entsprechen genau deiner Prioritäts-Reihenfolge.
+- **Heute / Woche**: über den Umschalter planst du nur heute oder gleich die
+  nächsten 5 Tage. In der Wochenansicht rutscht alles, was an einem Tag nicht
+  mehr reinpasst, automatisch auf den nächsten. Umsortieren wirkt global —
+  schiebst du eine Task weit nach oben, landet sie an einem früheren Tag.
 - Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
   herum; ohne dienen Beispiel-Termine als Demo.
 
