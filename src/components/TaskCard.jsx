@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Check, Repeat, Trash2 } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
@@ -6,18 +7,33 @@ import { formatDueLabel, isOverdue } from '../lib/date.js'
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
 export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   const area = areas[task.area]
-  const done = task.done
+  // Beim Abhaken erst kurz die Animation zeigen, dann erst in der echten
+  // Liste ändern — sonst verschwindet die Karte, bevor man den "Pop" sieht.
+  const [pending, setPending] = useState(false)
+  const done = task.done || pending
   const dueLabel = formatDueLabel(task.due_date)
   const overdue = !done && isOverdue(task.due_date)
 
+  function handleToggle() {
+    if (pending) return
+    if (!task.done) {
+      setPending(true)
+      setTimeout(() => onToggle(task.id), 220)
+    } else {
+      onToggle(task.id)
+    }
+  }
+
   return (
-    <div className="group flex items-center gap-3 py-2.5">
+    <div className="group flex animate-task-in items-center gap-3 py-2.5">
       <button
         type="button"
-        onClick={() => onToggle(task.id)}
+        onClick={handleToggle}
         aria-pressed={done}
         aria-label={done ? 'Als offen markieren' : 'Als erledigt markieren'}
-        className="mt-0.5 grid size-5 shrink-0 self-start place-items-center rounded-full border-2 transition-colors"
+        className={`mt-0.5 grid size-5 shrink-0 self-start place-items-center rounded-full border-2 transition-colors ${
+          pending ? 'animate-check-pop' : ''
+        }`}
         style={{
           borderColor: area.color,
           backgroundColor: done ? area.color : 'transparent',

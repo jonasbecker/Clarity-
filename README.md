@@ -106,6 +106,10 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   zeigt je Task ihren geplanten Zeit-Slot.
 - Im **Tagesplan** sind bereits vergangene Slots ausgegraut, der laufende
   Block ist mit „Jetzt" markiert.
+- **Tagesfortschritt**: ein kleiner Fortschrittsring im Header zeigt, wie
+  viele der heute fälligen Tasks schon erledigt sind.
+- **Polish**: Lade-Skeletons statt „Lädt …", freundlichere Empty-States mit
+  Icons sowie sanfte Animationen beim Erscheinen neuer Tasks und beim Abhaken.
 
 ## Tasks speichern mit Supabase (optional)
 

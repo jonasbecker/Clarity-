@@ -1,10 +1,12 @@
 import { LogOut, Moon, Sun } from 'lucide-react'
 import { getGreeting, formatLongDate } from '../lib/date.js'
+import ProgressRing from './ProgressRing.jsx'
 
 // Header: Begrüßung + Datum links, Aktionen rechts.
 // `theme`/`onToggleTheme` schalten Hell/Dunkel; `onSignOut` (optional)
 // zeigt den Abmelden-Knopf nur, wenn jemand eingeloggt ist.
-export default function Header({ name, theme, onToggleTheme, onSignOut }) {
+// `progress` (optional) zeigt den Tagesfortschritt als kleinen Ring.
+export default function Header({ name, theme, onToggleTheme, onSignOut, progress }) {
   return (
     <header className="mb-8 flex items-start justify-between gap-4">
       <div>
@@ -14,6 +16,16 @@ export default function Header({ name, theme, onToggleTheme, onSignOut }) {
         <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
           {getGreeting()}, {name}
         </h1>
+        {progress && (
+          <div className="mt-3 flex items-center gap-3">
+            <ProgressRing done={progress.done} total={progress.total} size={40} stroke={4} />
+            <p className="text-sm text-ink-soft">
+              {progress.total === 0
+                ? 'Keine Tasks für heute geplant'
+                : `${progress.done} von ${progress.total} heute erledigt`}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-1 flex shrink-0 items-center gap-1">

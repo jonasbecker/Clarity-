@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Sparkles, PartyPopper, SearchX } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import TaskGroup from './TaskGroup.jsx'
 import CompletedTasks from './CompletedTasks.jsx'
+import { SkeletonLine, SkeletonRow } from './Skeleton.jsx'
 import { areas } from '../data/dummyData.js'
 
 // Bereichsfilter-Chips: "Alle" + die drei Lebensbereiche.
@@ -43,13 +44,22 @@ export default function TaskList({
       </SectionTitle>
 
       {loading ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          Lädt …
-        </p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
+              <SkeletonLine className="mb-3 h-2.5 w-1/3" />
+              <div className="divide-y divide-line">
+                <SkeletonRow />
+                <SkeletonRow />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : tasks.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          Noch keine Tasks. Tipp unten auf „+", um deine erste zu erfassen.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+          <Sparkles size={20} />
+          <p>Noch keine Tasks. Tipp unten auf „+", um deine erste zu erfassen.</p>
+        </div>
       ) : (
         <>
           {/* Suche + Bereichsfilter */}
@@ -99,16 +109,18 @@ export default function TaskList({
           </div>
 
           {filtered.length === 0 ? (
-            <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-              Keine Treffer.
-            </p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+              <SearchX size={20} />
+              <p>Keine Treffer.</p>
+            </div>
           ) : (
             <>
               {open.length === 0
                 ? !hasFilters && (
-                    <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-                      Alles abgehakt — stark! 🎉
-                    </p>
+                    <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+                      <PartyPopper size={20} />
+                      <p>Alles abgehakt — stark!</p>
+                    </div>
                   )
                 : (
                     <div className="grid gap-3 sm:grid-cols-3">

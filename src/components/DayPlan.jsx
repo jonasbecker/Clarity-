@@ -8,8 +8,11 @@ import {
   ChevronUp,
   ChevronDown,
   RotateCcw,
+  PartyPopper,
+  Clock,
 } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
+import { SkeletonLine } from './Skeleton.jsx'
 import { areas } from '../data/dummyData.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
@@ -33,6 +36,7 @@ import {
 // über mehrere Tage verteilt — was heute nicht passt, rutscht weiter).
 export default function DayPlan({
   tasks,
+  loading,
   eventsByDate,
   calendarStatus,
   onConnect,
@@ -74,6 +78,23 @@ export default function DayPlan({
 
   const now = new Date()
   const nowMin = now.getHours() * 60 + now.getMinutes()
+
+  if (loading) {
+    return (
+      <section className="mb-10">
+        <SectionTitle>Dein Tagesplan</SectionTitle>
+        <div className="mb-3 flex items-center gap-2">
+          <SkeletonLine className="h-6 w-40" />
+          <SkeletonLine className="ml-auto h-6 w-24" />
+        </div>
+        <div className="space-y-3 rounded-2xl border border-line bg-surface p-5 shadow-sm">
+          <SkeletonLine className="h-4 w-full" />
+          <SkeletonLine className="h-4 w-5/6" />
+          <SkeletonLine className="h-4 w-2/3" />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="mb-10">
@@ -252,11 +273,14 @@ function TodayPlan({
       )}
 
       {agenda.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          {tasksCount === 0
-            ? 'Keine offenen Tasks — nichts zu planen. Genieß den Tag ✨'
-            : 'Außerhalb deiner Arbeitszeit — passe das Fenster oben an, um zu planen.'}
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+          {tasksCount === 0 ? <PartyPopper size={20} /> : <Clock size={20} />}
+          <p>
+            {tasksCount === 0
+              ? 'Keine offenen Tasks — nichts zu planen. Genieß den Tag!'
+              : 'Außerhalb deiner Arbeitszeit — passe das Fenster oben an, um zu planen.'}
+          </p>
+        </div>
       ) : (
         <ul className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
           {agenda.map((item, i) => {
@@ -314,9 +338,10 @@ function WeekPlan({ ordered, dayEvents, prefs, nowMin, seq, onToggle, onMove, da
   return (
     <>
       {!anyPlanned ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          Nichts zu planen — alle Tasks erledigt oder kein Platz im Fenster.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+          <PartyPopper size={20} />
+          <p>Nichts zu planen — alle Tasks erledigt oder kein Platz im Fenster.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {days.map((day) => (

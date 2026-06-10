@@ -76,6 +76,14 @@ export default function TodayView({ session }) {
   // Termine nach Tag gruppieren (für die Mehrtages-Planung): echte aus Google
   // über mehrere Tage, sonst die Beispiel-Timeline nur für heute.
   const todayISO = toISODate(new Date())
+
+  // Tagesfortschritt: alle für heute fälligen Tasks (offen + heute erledigt).
+  const todayTasks = tasks.filter((t) => t.due_date === todayISO)
+  const todayProgress = {
+    done: todayTasks.filter((t) => t.done).length,
+    total: todayTasks.length,
+  }
+
   const eventsByDate =
     calendar.status === 'connected'
       ? calendar.events.reduce((map, e) => {
@@ -138,6 +146,7 @@ export default function TodayView({ session }) {
         theme={theme}
         onToggleTheme={toggleTheme}
         onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
+        progress={loading ? null : todayProgress}
       />
 
       {!isSupabaseConfigured && <DemoBanner />}
@@ -150,34 +159,32 @@ export default function TodayView({ session }) {
 
       {!loading && <WeekReview stats={stats} />}
 
-      {!loading && (
-        <FocusSection
-          tasks={focus}
-          summary={ai.status === 'ready' ? ai.plan?.summary : null}
-          aiStatus={ai.status}
-          aiError={ai.error}
-          onGenerate={() =>
-            ai.generate({ tasks: openTasks, events: todayEvents })
-          }
-          onStartFocus={() => setFocusOpen(true)}
-        />
-      )}
+      <FocusSection
+        tasks={focus}
+        loading={loading}
+        summary={ai.status === 'ready' ? ai.plan?.summary : null}
+        aiStatus={ai.status}
+        aiError={ai.error}
+        onGenerate={() =>
+          ai.generate({ tasks: openTasks, events: todayEvents })
+        }
+        onStartFocus={() => setFocusOpen(true)}
+      />
 
-      {!loading && (
-        <DayPlan
-          tasks={openTasks}
-          eventsByDate={eventsByDate}
-          calendarStatus={calendar.status}
-          onConnect={calendar.connect}
-          onToggle={toggleTask}
-          prefs={planPrefs}
-          ai={ai}
-          onOptimize={() =>
-            ai.generate({ tasks: openTasks, events: todayEvents })
-          }
-          planOrder={planOrder}
-        />
-      )}
+      <DayPlan
+        tasks={openTasks}
+        loading={loading}
+        eventsByDate={eventsByDate}
+        calendarStatus={calendar.status}
+        onConnect={calendar.connect}
+        onToggle={toggleTask}
+        prefs={planPrefs}
+        ai={ai}
+        onOptimize={() =>
+          ai.generate({ tasks: openTasks, events: todayEvents })
+        }
+        planOrder={planOrder}
+      />
 
       {error && (
         <p className="mb-4 rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger">

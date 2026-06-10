@@ -1,19 +1,34 @@
-import { Play, Sparkles, Loader2 } from 'lucide-react'
+import { Play, Sparkles, Loader2, Coffee } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import FocusCard from './FocusCard.jsx'
+import { SkeletonCard } from './Skeleton.jsx'
 
 // "Dein Fokus heute": die wichtigsten offenen Tasks.
 // Standardmäßig nach Dringlichkeit sortiert; per "KI-Plan"-Knopf lässt du
 // die Reihenfolge + Begründungen von der KI vorschlagen.
 export default function FocusSection({
   tasks,
+  loading,
   summary,
   aiStatus,
   aiError,
   onGenerate,
   onStartFocus,
 }) {
-  const loading = aiStatus === 'loading'
+  const aiLoading = aiStatus === 'loading'
+
+  if (loading) {
+    return (
+      <section className="mb-10">
+        <SectionTitle>Dein Fokus heute</SectionTitle>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="mb-10">
@@ -24,15 +39,15 @@ export default function FocusSection({
               <button
                 type="button"
                 onClick={onGenerate}
-                disabled={loading}
+                disabled={aiLoading}
                 className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30 disabled:opacity-50"
               >
-                {loading ? (
+                {aiLoading ? (
                   <Loader2 size={12} className="animate-spin" />
                 ) : (
                   <Sparkles size={12} className="text-area-study" />
                 )}
-                {loading ? 'Denkt …' : 'KI-Plan'}
+                {aiLoading ? 'Denkt …' : 'KI-Plan'}
               </button>
               <button
                 type="button"
@@ -62,9 +77,10 @@ export default function FocusSection({
       )}
 
       {tasks.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
-          Nichts Dringendes offen — schön! Neue Tasks erfasst du unten mit „+".
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+          <Coffee size={20} />
+          <p>Nichts Dringendes offen — schön! Neue Tasks erfasst du unten mit „+".</p>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-3">
           {tasks.map((task) => (
