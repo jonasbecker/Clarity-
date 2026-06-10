@@ -113,6 +113,15 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Einklappbar**: „Dein Fokus heute" und „Dein Tagesplan" lassen sich per
   Klick auf die Überschrift einklappen — gemerkt im Browser, für eine
   schlankere Seite.
+- **Priorität**: jede Task ist Niedrig/Mittel/Hoch — „Hoch" wird mit einer
+  kleinen roten Flagge vor dem Titel hervorgehoben.
+- **Checklisten (Subtasks)**: einer Task im Formular Teilschritte hinzufügen;
+  in der Liste erscheint der Fortschritt als „2/4".
+- **Überfällig**: gibt es überfällige offene Tasks, erscheint ein Filter-Chip
+  „Überfällig (n)"; überfällige Zeilen werden zusätzlich rot markiert und nach
+  oben sortiert.
+- **Tastatur-Shortcuts**: `n` neue Task, `/` Suche fokussieren, `f`
+  Fokus-Modus — greifen nicht, während du in einem Eingabefeld tippst.
 
 ## Tasks speichern mit Supabase (optional)
 

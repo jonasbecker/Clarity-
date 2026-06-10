@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Check, Repeat, Trash2 } from 'lucide-react'
+import { Check, Repeat, Trash2, Flag, ListChecks } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
+import { subtaskProgress } from '../lib/subtasks.js'
 
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
@@ -13,6 +14,8 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   const done = task.done || pending
   const dueLabel = formatDueLabel(task.due_date)
   const overdue = !done && isOverdue(task.due_date)
+  const highPriority = task.priority === 'high'
+  const steps = subtaskProgress(task.subtasks)
 
   function handleToggle() {
     if (pending) return
@@ -25,7 +28,11 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   }
 
   return (
-    <div className="group flex animate-task-in items-center gap-3 py-2.5">
+    <div
+      className={`group flex animate-task-in items-center gap-3 py-2.5 ${
+        overdue ? 'border-l-2 border-danger pl-2' : ''
+      }`}
+    >
       <button
         type="button"
         onClick={handleToggle}
@@ -53,11 +60,27 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
             done ? 'text-ink-soft line-through' : ''
           }`}
         >
+          {highPriority && (
+            <Flag
+              size={12}
+              strokeWidth={2.5}
+              className="mr-1 inline-block -translate-y-px fill-danger text-danger"
+              aria-label="Hohe Priorität"
+            />
+          )}
           {task.title}
         </span>
-        {task.description && (
-          <span className="mt-0.5 line-clamp-1 block text-xs text-ink-soft">
-            {task.description}
+        {(task.description || steps.total > 0) && (
+          <span className="mt-0.5 flex items-center gap-2 text-xs text-ink-soft">
+            {steps.total > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1">
+                <ListChecks size={12} />
+                {steps.done}/{steps.total}
+              </span>
+            )}
+            {task.description && (
+              <span className="line-clamp-1 min-w-0">{task.description}</span>
+            )}
           </span>
         )}
       </button>

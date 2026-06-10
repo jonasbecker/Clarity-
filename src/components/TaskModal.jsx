@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Mic, Trash2, X } from 'lucide-react'
+import { Mic, Trash2, X, Plus } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
+import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
 
 // Wiederholung: beim Abhaken legt useTasks automatisch die nächste Instanz
 // mit passender Fälligkeit an (1 Tag bzw. 1 Woche weiter).
@@ -14,6 +15,13 @@ const REPEATS = [
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
 const DURATIONS = [15, 30, 45, 60, 90, 120]
+
+// Priorität — visuell zurückhaltend, hebt nur "Hoch" hervor.
+const PRIORITIES = [
+  { id: 'low', label: 'Niedrig' },
+  { id: 'medium', label: 'Mittel' },
+  { id: 'high', label: 'Hoch' },
+]
 
 // Formular zum Erfassen ODER Bearbeiten einer Task.
 //
@@ -45,6 +53,9 @@ export default function TaskModal({
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // null | 'daily' | 'weekly'
   const [duration, setDuration] = useState(30) // geschätzte Dauer in Minuten
+  const [priority, setPriority] = useState('medium') // 'low' | 'medium' | 'high'
+  const [subtasks, setSubtasks] = useState([]) // [{ id, title, done }]
+  const [newSubtask, setNewSubtask] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
@@ -59,6 +70,9 @@ export default function TaskModal({
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
     setDuration(task?.duration_min ?? 30)
+    setPriority(task?.priority ?? 'medium')
+    setSubtasks(Array.isArray(task?.subtasks) ? task.subtasks : [])
+    setNewSubtask('')
     setSaveAsTemplate(false)
   }, [open, task])
 
@@ -80,6 +94,12 @@ export default function TaskModal({
   const trimmed = title.trim()
   const canSubmit = trimmed.length > 0
 
+  function handleAddSubtask() {
+    if (!newSubtask.trim()) return
+    setSubtasks((cur) => addSubtask(cur, newSubtask))
+    setNewSubtask('')
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
@@ -90,6 +110,8 @@ export default function TaskModal({
       description: description.trim() || null,
       repeat,
       duration_min: duration,
+      priority,
+      subtasks,
     })
     // Beim Anlegen optional als Vorlage merken (ohne Fälligkeit).
     if (!isEdit && saveAsTemplate && onSaveTemplate) {
@@ -177,6 +199,63 @@ export default function TaskModal({
             className="mt-3 w-full resize-none rounded-xl border border-line bg-canvas px-4 py-3 text-sm outline-none transition-colors focus:border-ink/30"
           />
 
+          {/* Subtasks / Checkliste (optional) */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Checkliste <span className="font-normal">(optional)</span>
+          </p>
+          {subtasks.length > 0 && (
+            <ul className="mb-2 space-y-1.5">
+              {subtasks.map((s) => (
+                <li key={s.id} className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={s.done}
+                    onChange={() => setSubtasks((cur) => toggleSubtask(cur, s.id))}
+                    className="size-4 shrink-0 accent-[var(--color-ink)]"
+                  />
+                  <span
+                    className={`min-w-0 flex-1 text-sm ${
+                      s.done ? 'text-ink-soft line-through' : ''
+                    }`}
+                  >
+                    {s.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSubtasks((cur) => removeSubtask(cur, s.id))}
+                    aria-label="Schritt entfernen"
+                    className="shrink-0 text-ink-soft transition-colors hover:text-danger"
+                  >
+                    <X size={15} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSubtask}
+              onChange={(e) => setNewSubtask(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddSubtask()
+                }
+              }}
+              placeholder="Schritt hinzufügen …"
+              className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+            />
+            <button
+              type="button"
+              onClick={handleAddSubtask}
+              aria-label="Schritt hinzufügen"
+              className="grid size-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+
           {/* Bereich */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Bereich</p>
           <div className="grid grid-cols-3 gap-2">
@@ -220,6 +299,28 @@ export default function TaskModal({
                   }`}
                 >
                   {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Priorität */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Priorität</p>
+          <div className="flex flex-wrap gap-2">
+            {PRIORITIES.map((p) => {
+              const active = priority === p.id
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPriority(p.id)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  {p.label}
                 </button>
               )
             })}

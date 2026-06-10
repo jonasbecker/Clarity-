@@ -31,11 +31,18 @@ alter table public.tasks add column if not exists description text;
 alter table public.tasks add column if not exists repeat text;
 alter table public.tasks add column if not exists duration_min int default 30;
 alter table public.tasks add column if not exists completed_at timestamptz;
+alter table public.tasks add column if not exists priority text default 'medium';
+alter table public.tasks add column if not exists subtasks jsonb not null default '[]';
 
 -- Nur erlaubte Werte für die Wiederholung.
 alter table public.tasks drop constraint if exists tasks_repeat_check;
 alter table public.tasks add constraint tasks_repeat_check
   check (repeat is null or repeat in ('daily', 'weekly'));
+
+-- Priorität: 'low', 'medium' oder 'high' (Standard 'medium').
+alter table public.tasks drop constraint if exists tasks_priority_check;
+alter table public.tasks add constraint tasks_priority_check
+  check (priority in ('low', 'medium', 'high'));
 
 -- Dauer muss positiv und im Tagesrahmen bleiben.
 alter table public.tasks drop constraint if exists tasks_duration_check;

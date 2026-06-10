@@ -5,9 +5,10 @@ import TaskGroup from './TaskGroup.jsx'
 import CompletedTasks from './CompletedTasks.jsx'
 import { SkeletonLine, SkeletonRow } from './Skeleton.jsx'
 import { areas } from '../data/dummyData.js'
+import { isOverdue } from '../lib/date.js'
 
 // Bereichsfilter-Chips: "Alle" + die drei Lebensbereiche.
-const FILTERS = [{ id: 'all', label: 'Alle' }, ...Object.values(areas)]
+const AREA_FILTERS = [{ id: 'all', label: 'Alle' }, ...Object.values(areas)]
 
 // Liste der Tasks: Suche + Bereichsfilter oben, offene nach Bereich
 // gruppiert, erledigte separat unten in einem einklappbaren Bereich.
@@ -17,14 +18,29 @@ export default function TaskList({
   onToggle,
   onEdit,
   onDelete,
+  searchInputRef,
 }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('all')
 
+  // Wie viele offene Tasks sind überfällig? Steuert den "Überfällig"-Chip.
+  const overdueCount = tasks.filter(
+    (t) => !t.done && isOverdue(t.due_date),
+  ).length
+  // Chip nur anbieten, wenn es etwas Überfälliges gibt.
+  const FILTERS =
+    overdueCount > 0
+      ? [...AREA_FILTERS, { id: 'overdue', label: `Überfällig (${overdueCount})` }]
+      : AREA_FILTERS
+
   const hasFilters = query.trim() !== '' || areaFilter !== 'all'
   const q = query.trim().toLowerCase()
   const filtered = tasks.filter((t) => {
-    if (areaFilter !== 'all' && t.area !== areaFilter) return false
+    if (areaFilter === 'overdue') {
+      if (t.done || !isOverdue(t.due_date)) return false
+    } else if (areaFilter !== 'all' && t.area !== areaFilter) {
+      return false
+    }
     if (
       q &&
       !t.title.toLowerCase().includes(q) &&
@@ -34,7 +50,10 @@ export default function TaskList({
     return true
   })
 
-  const open = filtered.filter((t) => !t.done)
+  // Überfällige Tasks innerhalb der Liste nach oben (stabil sonst).
+  const open = filtered
+    .filter((t) => !t.done)
+    .sort((a, b) => Number(isOverdue(b.due_date)) - Number(isOverdue(a.due_date)))
   const done = filtered.filter((t) => t.done)
 
   return (
@@ -70,6 +89,7 @@ export default function TaskList({
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft"
               />
               <input
+                ref={searchInputRef}
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

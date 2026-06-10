@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Header from '../components/Header.jsx'
 import FocusSection from '../components/FocusSection.jsx'
 import DayPlan from '../components/DayPlan.jsx'
@@ -21,6 +21,7 @@ import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
 import { useOnboarding } from '../lib/useOnboarding.js'
+import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
@@ -58,6 +59,7 @@ export default function TodayView({ session }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
+  const searchInputRef = useRef(null)
 
   // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
   const openTasks = tasks.filter((t) => !t.done)
@@ -122,6 +124,14 @@ export default function TodayView({ session }) {
     setEditing(task)
     setModalOpen(true)
   }
+
+  // Tastatur-Shortcuts (nur wenn weder Modal noch Fokus offen sind).
+  useKeyboardShortcuts({
+    enabled: !modalOpen && !focusOpen,
+    onNew: openCreate,
+    onSearch: () => searchInputRef.current?.focus(),
+    onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
+  })
   // Speichern: bei vorhandener Task bearbeiten, sonst neu anlegen.
   function handleSubmit(fields) {
     if (editing) editTask(editing.id, fields)
@@ -202,6 +212,7 @@ export default function TodayView({ session }) {
         onToggle={toggleTask}
         onEdit={openEdit}
         onDelete={removeTask}
+        searchInputRef={searchInputRef}
       />
 
       <AddTaskButton onClick={openCreate} />
