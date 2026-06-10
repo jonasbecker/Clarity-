@@ -9,6 +9,7 @@ import FocusMode from '../components/FocusMode.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import ReminderBanner from '../components/ReminderBanner.jsx'
 import WeekReview from '../components/WeekReview.jsx'
+import QuickAdd from '../components/QuickAdd.jsx'
 import Toast from '../components/Toast.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
@@ -17,6 +18,7 @@ import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
+import { useTemplates } from '../lib/useTemplates.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
@@ -47,6 +49,7 @@ export default function TodayView({ session }) {
   const notifications = useNotifications(tasks, loading)
   const planPrefs = usePlanPrefs()
   const planOrder = usePlanOrder()
+  const { templates, addTemplate, removeTemplate } = useTemplates(session)
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -113,6 +116,17 @@ export default function TodayView({ session }) {
     if (editing) editTask(editing.id, fields)
     else addTask(fields)
   }
+  // Schnell-Hinzufügen aus einer Vorlage: legt sofort eine Task für heute an.
+  function quickAdd(template) {
+    addTask({
+      title: template.title,
+      area: template.area,
+      duration_min: template.duration_min,
+      description: template.description ?? null,
+      repeat: template.repeat ?? null,
+      due_date: todayISO,
+    })
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
@@ -168,6 +182,10 @@ export default function TodayView({ session }) {
         </p>
       )}
 
+      {!loading && (
+        <QuickAdd templates={templates} onUse={quickAdd} onRemove={removeTemplate} />
+      )}
+
       <TaskList
         tasks={tasks}
         loading={loading}
@@ -184,6 +202,7 @@ export default function TodayView({ session }) {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         onDelete={removeTask}
+        onSaveTemplate={addTemplate}
       />
 
       {focusOpen && (

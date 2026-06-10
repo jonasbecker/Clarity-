@@ -82,6 +82,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 
 ## Weitere Funktionen
 
+- **Vorlagen & Schnellerfassung**: beim Anlegen einer Task „Als Vorlage merken"
+  ankreuzen — danach erscheint sie als Chip unter „Schnell hinzufügen". Ein
+  Tipp legt daraus sofort eine Task für heute an (mit Bereich, Dauer und
+  Wiederholung der Vorlage), das × entfernt die Vorlage wieder. Mit Supabase
+  liegen Vorlagen im Konto (geräteübergreifend), sonst lokal im Browser.
 - **Wiederkehrende Tasks**: beim Anlegen/Bearbeiten "Täglich" oder
   "Wöchentlich" wählen — nach dem Abhaken erscheint automatisch die nächste
   Instanz mit passender Fälligkeit.

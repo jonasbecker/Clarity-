@@ -53,3 +53,28 @@ create policy "Nutzer verwalten ihre eigenen Tasks"
   to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- ----------------------------------------------------------------------
+-- Vorlagen: wiederkehrende Routine-Tasks als Blaupause (ohne Fälligkeit).
+-- Per Tipp lässt sich daraus mit einem Klick eine echte Task anlegen.
+create table if not exists public.task_templates (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users (id) on delete cascade
+               default auth.uid(),
+  title        text not null,
+  area         text not null check (area in ('study', 'work', 'private')),
+  duration_min int default 30,
+  description  text,
+  repeat       text check (repeat is null or repeat in ('daily', 'weekly')),
+  inserted_at  timestamptz not null default now()
+);
+
+alter table public.task_templates enable row level security;
+
+drop policy if exists "Nutzer verwalten ihre eigenen Vorlagen" on public.task_templates;
+create policy "Nutzer verwalten ihre eigenen Vorlagen"
+  on public.task_templates
+  for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

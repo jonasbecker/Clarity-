@@ -30,7 +30,14 @@ const QUICK = [
   { label: 'Übermorgen', days: 2 },
 ]
 
-export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
+export default function TaskModal({
+  open,
+  onClose,
+  onSubmit,
+  onDelete,
+  onSaveTemplate,
+  task,
+}) {
   const isEdit = Boolean(task)
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('study')
@@ -38,6 +45,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // null | 'daily' | 'weekly'
   const [duration, setDuration] = useState(30) // geschätzte Dauer in Minuten
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
   const speech = useSpeech({ onResult: (text) => setTitle(text) })
@@ -51,6 +59,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
     setDuration(task?.duration_min ?? 30)
+    setSaveAsTemplate(false)
   }, [open, task])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
@@ -82,6 +91,16 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
       repeat,
       duration_min: duration,
     })
+    // Beim Anlegen optional als Vorlage merken (ohne Fälligkeit).
+    if (!isEdit && saveAsTemplate && onSaveTemplate) {
+      onSaveTemplate({
+        title: trimmed,
+        area,
+        duration_min: duration,
+        description: description.trim() || null,
+        repeat,
+      })
+    }
     onClose()
   }
 
@@ -273,11 +292,24 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
             })}
           </div>
 
+          {/* Als Vorlage merken (nur beim Anlegen) */}
+          {!isEdit && onSaveTemplate && (
+            <label className="mt-5 flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+              <input
+                type="checkbox"
+                checked={saveAsTemplate}
+                onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                className="size-4 accent-[var(--color-ink)]"
+              />
+              Als Vorlage für „Schnell hinzufügen" merken
+            </label>
+          )}
+
           {/* Absenden */}
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-7 w-full rounded-xl bg-ink py-3.5 font-medium text-canvas transition-opacity disabled:opacity-40"
+            className="mt-5 w-full rounded-xl bg-ink py-3.5 font-medium text-canvas transition-opacity disabled:opacity-40"
           >
             {isEdit ? 'Speichern' : 'Task hinzufügen'}
           </button>
