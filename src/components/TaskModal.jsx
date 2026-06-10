@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { Mic, Trash2, X } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { isoInDays } from '../lib/date.js'
+import { useSpeech } from '../lib/useSpeech.js'
 
 // Formular zum Erfassen ODER Bearbeiten einer Task.
 //
@@ -25,6 +26,9 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
 
+  // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
+  const speech = useSpeech({ onResult: (text) => setTitle(text) })
+
   // Beim Öffnen die Felder passend füllen: leer (neu) oder aus der Task.
   useEffect(() => {
     if (!open) return
@@ -43,6 +47,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
+      speech.stop() // beim Schließen das Mikrofon nicht weiterlaufen lassen
     }
   }, [open, onClose])
 
@@ -91,15 +96,41 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Titel */}
-          <input
-            autoFocus
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Was möchtest du erledigen?"
-            className="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-base outline-none transition-colors focus:border-ink/30"
-          />
+          {/* Titel — mit optionalem Mikrofon-Knopf zum Einsprechen */}
+          <div className="relative">
+            <input
+              autoFocus
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Was möchtest du erledigen?"
+              className={`w-full rounded-xl border border-line bg-canvas px-4 py-3 text-base outline-none transition-colors focus:border-ink/30 ${
+                speech.supported ? 'pr-12' : ''
+              }`}
+            />
+            {speech.supported && (
+              <button
+                type="button"
+                onClick={() => (speech.listening ? speech.stop() : speech.start())}
+                aria-label={speech.listening ? 'Aufnahme stoppen' : 'Task einsprechen'}
+                className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full transition-colors hover:bg-surface"
+              >
+                <Mic
+                  size={18}
+                  className={
+                    speech.listening
+                      ? 'animate-pulse text-red-500'
+                      : 'text-ink-soft'
+                  }
+                />
+              </button>
+            )}
+          </div>
+          {speech.listening && (
+            <p className="mt-1.5 px-1 text-xs text-ink-soft">
+              Hört zu … sprich deine Task.
+            </p>
+          )}
 
           {/* Beschreibung (optional) */}
           <textarea
