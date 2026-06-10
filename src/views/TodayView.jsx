@@ -19,6 +19,7 @@ import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
+import { toISODate } from '../lib/date.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, timeline } from '../data/dummyData.js'
 
@@ -64,8 +65,17 @@ export default function TodayView({ session }) {
   const focus = aiFocus ?? selectFocusTasks(tasks)
   const stats = weekStats(tasks)
 
-  // Termine für den Tagesplan: echte aus Google, sonst die Beispiel-Timeline.
-  const planEvents = calendar.status === 'connected' ? calendar.events : timeline
+  // Termine nach Tag gruppieren (für die Mehrtages-Planung): echte aus Google
+  // über mehrere Tage, sonst die Beispiel-Timeline nur für heute.
+  const todayISO = toISODate(new Date())
+  const eventsByDate =
+    calendar.status === 'connected'
+      ? calendar.events.reduce((map, e) => {
+          ;(map[e.date] ||= []).push(e)
+          return map
+        }, {})
+      : { [todayISO]: timeline }
+  const todayEvents = eventsByDate[todayISO] || []
 
   function openCreate() {
     setEditing(null)
@@ -107,7 +117,7 @@ export default function TodayView({ session }) {
           aiStatus={ai.status}
           aiError={ai.error}
           onGenerate={() =>
-            ai.generate({ tasks: openTasks, events: calendar.events })
+            ai.generate({ tasks: openTasks, events: todayEvents })
           }
           onStartFocus={() => setFocusOpen(true)}
         />
@@ -116,14 +126,14 @@ export default function TodayView({ session }) {
       {!loading && (
         <DayPlan
           tasks={openTasks}
-          events={planEvents}
+          eventsByDate={eventsByDate}
           calendarStatus={calendar.status}
           onConnect={calendar.connect}
           onToggle={toggleTask}
           prefs={planPrefs}
           ai={ai}
           onOptimize={() =>
-            ai.generate({ tasks: openTasks, events: calendar.events })
+            ai.generate({ tasks: openTasks, events: todayEvents })
           }
           planOrder={planOrder}
         />

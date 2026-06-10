@@ -33,7 +33,7 @@ import {
 // über mehrere Tage verteilt — was heute nicht passt, rutscht weiter).
 export default function DayPlan({
   tasks,
-  events,
+  eventsByDate,
   calendarStatus,
   onConnect,
   onToggle,
@@ -41,10 +41,18 @@ export default function DayPlan({
   ai,
   onOptimize,
   planOrder,
+  dayCount = 5,
 }) {
   const aiLoading = ai.status === 'loading'
   const [view, setView] = useState('today') // 'today' | 'week'
   const [draggedId, setDraggedId] = useState(null)
+
+  // Termine pro Tag aus der Map ziehen: heute = offset 0, Folgetage 1..n.
+  const todayEvents = eventsByDate[isoInDays(0)] || []
+  const dayEvents = Array.from(
+    { length: dayCount },
+    (_, d) => eventsByDate[isoInDays(d)] || [],
+  )
 
   // Reihenfolge + Dauer: KI-Plan, wenn vorhanden — sonst nach Dringlichkeit.
   const aiSchedule =
@@ -155,7 +163,7 @@ export default function DayPlan({
       {view === 'today' ? (
         <TodayPlan
           ordered={ordered}
-          events={events}
+          events={todayEvents}
           prefs={prefs}
           nowMin={nowMin}
           seq={seq}
@@ -169,12 +177,13 @@ export default function DayPlan({
       ) : (
         <WeekPlan
           ordered={ordered}
-          events={events}
+          dayEvents={dayEvents}
           prefs={prefs}
           nowMin={nowMin}
           seq={seq}
           onToggle={onToggle}
           onMove={move}
+          dayCount={dayCount}
         />
       )}
 
@@ -287,13 +296,13 @@ function TodayPlan({
 }
 
 // --- Ansicht "Woche": Tasks über mehrere Tage verteilt ---
-function WeekPlan({ ordered, events, prefs, nowMin, seq, onToggle, onMove }) {
+function WeekPlan({ ordered, dayEvents, prefs, nowMin, seq, onToggle, onMove, dayCount }) {
   const { days, unscheduled } = buildWeek({
     tasks: ordered,
-    todayEvents: events,
+    dayEvents,
     workStart: prefs.workStart,
     workEnd: prefs.workEnd,
-    dayCount: 5,
+    dayCount,
     now: nowMin,
   })
 

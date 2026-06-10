@@ -7,6 +7,8 @@
 // Die Client-ID ist öffentlich (kein Geheimnis) — sie sagt Google nur,
 // welche App fragt. Welche Konten/Kalender erlaubt sind, regelt Google.
 
+import { toISODate } from './date.js'
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
 
@@ -53,22 +55,29 @@ const fmtTime = new Intl.DateTimeFormat('de-DE', {
 })
 
 // Verwandelt ein Google-Event in unsere schlanke Timeline-Form.
+// `date` ('YYYY-MM-DD') sagt, an welchem Tag das Event liegt — wichtig für
+// die Mehrtages-Planung (Termine dem richtigen Tag zuordnen).
 function mapEvent(e) {
   const allDay = Boolean(e.start?.date) // ganztägige Events haben .date statt .dateTime
+  const startAt = allDay ? null : new Date(e.start.dateTime)
   return {
     id: e.id,
     title: e.summary || '(ohne Titel)',
     allDay,
-    start: allDay ? null : fmtTime.format(new Date(e.start.dateTime)),
+    date: allDay ? e.start.date : toISODate(startAt),
+    start: allDay ? null : fmtTime.format(startAt),
     end: allDay || !e.end?.dateTime ? null : fmtTime.format(new Date(e.end.dateTime)),
   }
 }
 
-// Heutige Termine aus dem Hauptkalender laden, zeitlich sortiert.
-export async function fetchTodaysEvents(accessToken) {
+// Termine der nächsten `days` Tage (ab heute 00:00) aus dem Hauptkalender
+// laden, zeitlich sortiert. Jedes Event trägt sein `date` für die Zuordnung
+// zum richtigen Planungstag.
+export async function fetchEvents(accessToken, days = 7) {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const end = new Date()
+  end.setDate(end.getDate() + Math.max(1, days) - 1)
   end.setHours(23, 59, 59, 999)
 
   const params = new URLSearchParams({
@@ -76,7 +85,7 @@ export async function fetchTodaysEvents(accessToken) {
     timeMax: end.toISOString(),
     singleEvents: 'true', // Serientermine in Einzeltermine auflösen
     orderBy: 'startTime',
-    maxResults: '20',
+    maxResults: '100',
   })
 
   const res = await fetch(

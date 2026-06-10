@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   isGoogleConfigured,
   requestAccessToken,
-  fetchTodaysEvents,
+  fetchEvents,
 } from './googleCalendar.js'
 
 // Verwaltet die Google-Kalender-Verbindung als überschaubare Zustände:
@@ -23,7 +23,7 @@ export function useGoogleCalendar() {
     setError(null)
     try {
       const token = await requestAccessToken({ silent })
-      const evs = await fetchTodaysEvents(token)
+      const evs = await fetchEvents(token, 7) // heute + nächste Tage
       setEvents(evs)
       setStatus('connected')
     } catch (e) {

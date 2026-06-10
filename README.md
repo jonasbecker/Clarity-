@@ -73,6 +73,8 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   nächsten 5 Tage. In der Wochenansicht rutscht alles, was an einem Tag nicht
   mehr reinpasst, automatisch auf den nächsten. Umsortieren wirkt global —
   schiebst du eine Task weit nach oben, landet sie an einem früheren Tag.
+  Mit verbundenem Google Kalender plant Clarity **jeden** Tag um die echten
+  Termine herum (es lädt die nächsten 7 Tage), nicht nur heute.
 - Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
   herum; ohne dienen Beispiel-Termine als Demo.
 
