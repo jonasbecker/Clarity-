@@ -230,12 +230,14 @@ function TodayPlan({
     ...timedEvents.map((e) => ({
       kind: 'event',
       start: toMinutes(e.start),
+      endMin: e.end ? toMinutes(e.end) : toMinutes(e.start),
       label: e.start,
       title: e.title,
     })),
     ...blocks.map((b) => ({
       kind: 'task',
       start: b.start,
+      endMin: b.end,
       label: toHHMM(b.start),
       end: toHHMM(b.end),
       task: b.task,
@@ -266,14 +268,24 @@ function TodayPlan({
         </p>
       ) : (
         <ul className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
-          {agenda.map((item, i) =>
-            item.kind === 'event' ? (
-              <EventRow key={`e${i}`} item={item} last={i === agenda.length - 1} />
+          {agenda.map((item, i) => {
+            const past = item.endMin <= nowMin
+            const isNow = item.start <= nowMin && nowMin < item.endMin
+            return item.kind === 'event' ? (
+              <EventRow
+                key={`e${i}`}
+                item={item}
+                last={i === agenda.length - 1}
+                past={past}
+                now={isNow}
+              />
             ) : (
               <TaskRow
                 key={item.task.id}
                 item={item}
                 last={i === agenda.length - 1}
+                past={past}
+                now={isNow}
                 onToggle={onToggle}
                 onMove={onMove}
                 pos={seq.indexOf(item.task.id)}
@@ -283,8 +295,8 @@ function TodayPlan({
                 onDragEnd={() => setDraggedId(null)}
                 onDrop={() => handleDrop(item.task.id)}
               />
-            ),
-          )}
+            )
+          })}
         </ul>
       )}
 
@@ -468,9 +480,10 @@ function Overflow({ tasks, label }) {
 }
 
 // Eine Zeile: fixer Termin (grau, nicht abhakbar, nicht verschiebbar).
-function EventRow({ item, last }) {
+// `past` = schon vorbei (ausgegraut), `now` = läuft gerade.
+function EventRow({ item, last, past, now }) {
   return (
-    <li className="flex gap-3">
+    <li className={`flex gap-3 transition-opacity ${past ? 'opacity-40' : ''}`}>
       <div className="w-12 shrink-0 pt-0.5 text-right text-sm tabular-nums text-ink-soft">
         {item.label}
       </div>
@@ -483,7 +496,9 @@ function EventRow({ item, last }) {
       </div>
       <div className="pb-5">
         <p className="font-medium leading-snug">{item.title}</p>
-        <p className="text-xs text-ink-soft">Termin</p>
+        <p className="text-xs text-ink-soft">
+          {now ? 'Jetzt · Termin' : 'Termin'}
+        </p>
       </div>
     </li>
   )
@@ -493,6 +508,8 @@ function EventRow({ item, last }) {
 function TaskRow({
   item,
   last,
+  past,
+  now,
   onToggle,
   onMove,
   pos,
@@ -513,7 +530,9 @@ function TaskRow({
       onDragOver={(e) => e.preventDefault()}
       onDragEnd={onDragEnd}
       onDrop={onDrop}
-      className={`flex gap-3 rounded-lg transition-opacity ${dragging ? 'opacity-40' : ''}`}
+      className={`flex gap-3 rounded-lg transition-opacity ${
+        dragging || past ? 'opacity-40' : ''
+      }`}
     >
       <div className="w-12 shrink-0 pt-0.5 text-right text-sm tabular-nums text-ink-soft">
         {item.label}
@@ -539,6 +558,7 @@ function TaskRow({
         <div className="min-w-0">
           <p className="font-medium leading-snug">{item.task.title}</p>
           <p className="text-xs text-ink-soft">
+            {now ? 'Jetzt · ' : ''}
             {item.label}–{item.end}
             {item.reason ? ` · ${item.reason}` : ''}
           </p>
