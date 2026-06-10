@@ -65,6 +65,10 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - Das **Arbeitszeit-Fenster** stellst du direkt im Tagesplan ein (gemerkt im
   Browser). Tasks, die heute nicht mehr reinpassen, landen in einer eigenen
   Liste.
+- **Reihenfolge selbst anpassen**: Task-Blöcke per Drag & Drop (Desktop) oder
+  Hoch/Runter (überall, auch Touch) umsortieren — der Plan rechnet die Zeiten
+  sofort neu. Deine manuelle Reihenfolge gilt für den Tag; „Auto" setzt sie
+  zurück. Die Blöcke entsprechen genau deiner Prioritäts-Reihenfolge.
 - Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
   herum; ohne dienen Beispiel-Termine als Demo.
 

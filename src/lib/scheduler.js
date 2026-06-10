@@ -102,17 +102,30 @@ export function buildSchedule({ tasks = [], events = [], workStart = '09:00', wo
 
   const gaps = freeGaps(events, start, dayEnd)
 
+  // Tasks STRENG in ihrer Reihenfolge platzieren: jede beginnt frühestens am
+  // Ende der vorigen (cursor). So entspricht die zeitliche Abfolge im Plan
+  // genau der Prioritäts-Reihenfolge — wichtig fürs manuelle Umsortieren.
+  // Eine Task, die nicht mehr passt, blockiert spätere kürzere nicht (der
+  // cursor wandert nur beim tatsächlichen Platzieren weiter).
   const blocks = []
   const unscheduled = []
+  let cursor = start
   for (const task of tasks) {
     const dur = clampDuration(task.duration_min)
-    const gap = gaps.find((g) => g.end - g.start >= dur)
-    if (!gap) {
+    let placedAt = null
+    for (const g of gaps) {
+      const s = Math.max(cursor, g.start)
+      if (s + dur <= g.end) {
+        placedAt = s // gaps sind zeitlich sortiert → erster Treffer = frühest
+        break
+      }
+    }
+    if (placedAt == null) {
       unscheduled.push(task)
       continue
     }
-    blocks.push({ task, start: gap.start, end: gap.start + dur })
-    gap.start += dur // Lücke verkleinern, Rest bleibt für die nächste Task
+    blocks.push({ task, start: placedAt, end: placedAt + dur })
+    cursor = placedAt + dur
   }
 
   return { blocks, unscheduled }

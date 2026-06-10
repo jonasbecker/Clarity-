@@ -16,6 +16,7 @@ import { useAiPlan } from '../lib/useAiPlan.js'
 import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
+import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
@@ -42,6 +43,7 @@ export default function TodayView({ session }) {
   const { theme, toggle: toggleTheme } = useTheme()
   const notifications = useNotifications(tasks, loading)
   const planPrefs = usePlanPrefs()
+  const planOrder = usePlanOrder()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -123,6 +125,7 @@ export default function TodayView({ session }) {
           onOptimize={() =>
             ai.generate({ tasks: openTasks, events: calendar.events })
           }
+          planOrder={planOrder}
         />
       )}
 

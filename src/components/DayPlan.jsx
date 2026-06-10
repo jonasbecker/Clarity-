@@ -1,7 +1,18 @@
-import { Check, Sparkles, Loader2, CalendarPlus } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Check,
+  Sparkles,
+  Loader2,
+  CalendarPlus,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw,
+} from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import { areas } from '../data/dummyData.js'
 import { orderForToday } from '../lib/focus.js'
+import { applyOrder, moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import {
   buildSchedule,
   toMinutes,
@@ -13,8 +24,9 @@ import {
 //
 // Legt deine offenen Tasks automatisch als Zeitblöcke in die freien Lücken
 // zwischen deinen Terminen, innerhalb deines Arbeitszeit-Fensters. Die
-// Reihenfolge/Dauer kommt entweder aus der einfachen Heuristik (immer da)
-// oder — auf Knopfdruck — von der KI (smartere Reihenfolge + Schätzungen).
+// Reihenfolge/Dauer kommt aus der Heuristik (immer da), aus der KI (Knopf)
+// — oder von dir: per Drag & Drop bzw. Hoch/Runter ziehst du Tasks um, der
+// Scheduler packt die Zeiten neu drumherum.
 export default function DayPlan({
   tasks,
   events,
@@ -24,8 +36,10 @@ export default function DayPlan({
   prefs,
   ai,
   onOptimize,
+  planOrder,
 }) {
   const aiLoading = ai.status === 'loading'
+  const [draggedId, setDraggedId] = useState(null)
 
   // Reihenfolge + Dauer: KI-Plan, wenn vorhanden — sonst nach Dringlichkeit.
   const aiSchedule =
@@ -40,7 +54,19 @@ export default function DayPlan({
           .filter(Boolean)
       : null
   const aiActive = Boolean(aiSchedule)
-  const ordered = aiSchedule ?? orderForToday(tasks)
+
+  // Deine manuelle Reihenfolge hat Vorrang, sonst KI/Heuristik.
+  const base = aiSchedule ?? orderForToday(tasks)
+  const ordered = applyOrder(base, planOrder.order)
+  const manual = Boolean(planOrder.order)
+
+  // ids der Task-Reihenfolge — Basis fürs Umsortieren.
+  const seq = ordered.map((t) => t.id)
+  const move = (id, dir) => planOrder.setOrder(moveInOrder(seq, id, dir))
+  const handleDrop = (targetId) => {
+    if (draggedId) planOrder.setOrder(reorderTo(seq, draggedId, targetId))
+    setDraggedId(null)
+  }
 
   const now = new Date()
   const { blocks, unscheduled } = buildSchedule({
@@ -76,19 +102,31 @@ export default function DayPlan({
       <SectionTitle
         aside={
           tasks.length > 0 ? (
-            <button
-              type="button"
-              onClick={onOptimize}
-              disabled={aiLoading}
-              className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium transition-colors hover:border-ink/30 disabled:opacity-50"
-            >
-              {aiLoading ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <Sparkles size={12} className="text-area-study" />
+            <span className="inline-flex items-center gap-2">
+              {manual && (
+                <button
+                  type="button"
+                  onClick={planOrder.reset}
+                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+                >
+                  <RotateCcw size={12} />
+                  Auto
+                </button>
               )}
-              {aiLoading ? 'Plant …' : aiActive ? 'KI-optimiert' : 'Mit KI optimieren'}
-            </button>
+              <button
+                type="button"
+                onClick={onOptimize}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium transition-colors hover:border-ink/30 disabled:opacity-50"
+              >
+                {aiLoading ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Sparkles size={12} className="text-area-study" />
+                )}
+                {aiLoading ? 'Plant …' : aiActive ? 'KI-optimiert' : 'Mit KI optimieren'}
+              </button>
+            </span>
           ) : null
         }
       >
@@ -148,6 +186,13 @@ export default function DayPlan({
                 item={item}
                 last={i === agenda.length - 1}
                 onToggle={onToggle}
+                onMove={move}
+                pos={seq.indexOf(item.task.id)}
+                total={seq.length}
+                dragging={draggedId === item.task.id}
+                onDragStart={() => setDraggedId(item.task.id)}
+                onDragEnd={() => setDraggedId(null)}
+                onDrop={() => handleDrop(item.task.id)}
               />
             ),
           )}
@@ -193,7 +238,7 @@ export default function DayPlan({
   )
 }
 
-// Eine Zeile: fixer Termin (grau, nicht abhakbar).
+// Eine Zeile: fixer Termin (grau, nicht abhakbar, nicht verschiebbar).
 function EventRow({ item, last }) {
   return (
     <li className="flex gap-3">
@@ -215,11 +260,32 @@ function EventRow({ item, last }) {
   )
 }
 
-// Eine Zeile: geplanter Task-Block (Bereichsfarbe, abhakbar).
-function TaskRow({ item, last, onToggle }) {
+// Eine Zeile: geplanter Task-Block (Bereichsfarbe, abhakbar, verschiebbar).
+function TaskRow({
+  item,
+  last,
+  onToggle,
+  onMove,
+  pos,
+  total,
+  dragging,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+}) {
   const area = areas[item.task.area]
   return (
-    <li className="flex gap-3">
+    <li
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        onDragStart()
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDragEnd={onDragEnd}
+      onDrop={onDrop}
+      className={`flex gap-3 rounded-lg transition-opacity ${dragging ? 'opacity-40' : ''}`}
+    >
       <div className="w-12 shrink-0 pt-0.5 text-right text-sm tabular-nums text-ink-soft">
         {item.label}
       </div>
@@ -228,19 +294,53 @@ function TaskRow({ item, last, onToggle }) {
           type="button"
           onClick={() => onToggle(item.task.id)}
           aria-label="Als erledigt markieren"
-          className="mt-1 grid size-4 place-items-center rounded-full border-2 ring-4 ring-surface transition-colors"
+          className="group mt-1 grid size-4 place-items-center rounded-full border-2 ring-4 ring-surface transition-colors"
           style={{ borderColor: area.color }}
         >
-          <Check size={10} strokeWidth={3} style={{ color: area.color }} className="opacity-0 hover:opacity-100" />
+          <Check
+            size={10}
+            strokeWidth={3}
+            style={{ color: area.color }}
+            className="opacity-0 transition-opacity group-hover:opacity-100"
+          />
         </button>
         {!last && <span className="w-px grow bg-line" aria-hidden="true" />}
       </div>
-      <div className="pb-5">
-        <p className="font-medium leading-snug">{item.task.title}</p>
-        <p className="text-xs text-ink-soft">
-          {item.label}–{item.end}
-          {item.reason ? ` · ${item.reason}` : ''}
-        </p>
+      <div className="flex flex-1 items-start justify-between gap-2 pb-5">
+        <div className="min-w-0">
+          <p className="font-medium leading-snug">{item.task.title}</p>
+          <p className="text-xs text-ink-soft">
+            {item.label}–{item.end}
+            {item.reason ? ` · ${item.reason}` : ''}
+          </p>
+        </div>
+
+        {/* Umsortieren: Greifer (Desktop-Drag) + Hoch/Runter (überall) */}
+        <div className="flex shrink-0 items-center text-ink-soft">
+          <GripVertical
+            size={15}
+            className="hidden cursor-grab opacity-50 sm:block"
+            aria-hidden="true"
+          />
+          <button
+            type="button"
+            onClick={() => onMove(item.task.id, 'up')}
+            disabled={pos <= 0}
+            aria-label="Früher einplanen"
+            className="grid size-6 place-items-center rounded transition-colors hover:text-ink disabled:opacity-25"
+          >
+            <ChevronUp size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(item.task.id, 'down')}
+            disabled={pos >= total - 1}
+            aria-label="Später einplanen"
+            className="grid size-6 place-items-center rounded transition-colors hover:text-ink disabled:opacity-25"
+          >
+            <ChevronDown size={16} />
+          </button>
+        </div>
       </div>
     </li>
   )
