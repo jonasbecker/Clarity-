@@ -97,6 +97,9 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Suche & Filter**: Tasks per Stichwort oder Bereich filtern.
 - **Rückgängig**: gelöschte Tasks lassen sich kurz danach per Toast
   wiederherstellen.
+- **Onboarding**: beim allerersten Start zeigt Clarity eine kurze,
+  überspringbare Einführung in die wichtigsten Funktionen (KI-Tagesplan,
+  Fokus-Modus, Vorlagen). Erscheint nur einmal — gemerkt im Browser.
 - **Dark Mode**, **Voice Capture** (Task per Spracheingabe) und
   **Focus Mode** (eine Task im Vollbild). Der Focus Mode folgt dem Tagesplan:
   er geht die heute noch anstehenden Blöcke in geplanter Reihenfolge durch und

@@ -11,6 +11,7 @@ import ReminderBanner from '../components/ReminderBanner.jsx'
 import WeekReview from '../components/WeekReview.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import Toast from '../components/Toast.jsx'
+import Onboarding from '../components/Onboarding.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
@@ -19,6 +20,7 @@ import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
+import { useOnboarding } from '../lib/useOnboarding.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
@@ -50,6 +52,7 @@ export default function TodayView({ session }) {
   const planPrefs = usePlanPrefs()
   const planOrder = usePlanOrder()
   const { templates, addTemplate, removeTemplate } = useTemplates(session)
+  const onboarding = useOnboarding()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -220,6 +223,8 @@ export default function TodayView({ session }) {
           onAction={undoDelete}
         />
       )}
+
+      {onboarding.open && <Onboarding onClose={onboarding.dismiss} />}
     </main>
   )
 }
