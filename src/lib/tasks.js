@@ -8,13 +8,14 @@ import { supabase } from './supabase.js'
 // die Datenquelle ist austauschbar, die UI bleibt gleich.
 //
 // Die Tabelle heißt "tasks" und hat die Spalten:
-//   id, user_id, title, area, due_date, description, repeat, done,
-//   completed_at, inserted_at
+//   id, user_id, title, area, due_date, description, repeat, duration_min,
+//   done, completed_at, inserted_at
 // (siehe supabase/schema.sql). user_id wird von der DB automatisch auf den
 // eingeloggten Nutzer gesetzt — wir müssen ihn nie selbst mitschicken.
 
 const TABLE = 'tasks'
-const COLS = 'id, title, area, due_date, description, repeat, done, completed_at'
+const COLS =
+  'id, title, area, due_date, description, repeat, duration_min, done, completed_at'
 
 // Alle Tasks des eingeloggten Nutzers, neueste zuerst.
 export async function fetchTasks() {

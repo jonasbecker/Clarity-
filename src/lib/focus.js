@@ -14,9 +14,14 @@ function urgency(task) {
 }
 
 export function selectFocusTasks(tasks, limit = 3) {
+  return orderForToday(tasks).slice(0, limit)
+}
+
+// Alle offenen Tasks nach Dringlichkeit geordnet (für den Tagesplan, wenn
+// keine KI-Reihenfolge vorliegt).
+export function orderForToday(tasks) {
   return tasks
-    .filter((t) => !t.done) // nur offene
-    .slice() // Kopie, damit wir das Original nicht umsortieren
+    .filter((t) => !t.done)
+    .slice()
     .sort((a, b) => urgency(a) - urgency(b))
-    .slice(0, limit)
 }

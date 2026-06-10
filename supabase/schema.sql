@@ -18,6 +18,7 @@ create table if not exists public.tasks (
   due_date    date,        -- Fälligkeit als echtes Datum (optional)
   description text,         -- Beschreibung (optional)
   repeat      text,        -- Wiederholung: null, 'daily' oder 'weekly'
+  duration_min int default 30, -- geschätzte Dauer in Minuten (für den Tagesplan)
   done        boolean not null default false,
   completed_at timestamptz, -- wann zuletzt erledigt (für Wochenrückblick)
   inserted_at timestamptz not null default now()
@@ -28,12 +29,18 @@ create table if not exists public.tasks (
 alter table public.tasks add column if not exists due_date date;
 alter table public.tasks add column if not exists description text;
 alter table public.tasks add column if not exists repeat text;
+alter table public.tasks add column if not exists duration_min int default 30;
 alter table public.tasks add column if not exists completed_at timestamptz;
 
 -- Nur erlaubte Werte für die Wiederholung.
 alter table public.tasks drop constraint if exists tasks_repeat_check;
 alter table public.tasks add constraint tasks_repeat_check
   check (repeat is null or repeat in ('daily', 'weekly'));
+
+-- Dauer muss positiv und im Tagesrahmen bleiben.
+alter table public.tasks drop constraint if exists tasks_duration_check;
+alter table public.tasks add constraint tasks_duration_check
+  check (duration_min is null or (duration_min > 0 and duration_min <= 1440));
 
 -- Row Level Security: ohne passende Regel sieht niemand etwas.
 alter table public.tasks enable row level security;

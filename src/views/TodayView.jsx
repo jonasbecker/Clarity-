@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Header from '../components/Header.jsx'
 import FocusSection from '../components/FocusSection.jsx'
-import Timeline from '../components/Timeline.jsx'
+import DayPlan from '../components/DayPlan.jsx'
 import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
@@ -15,6 +15,7 @@ import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
+import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
@@ -40,6 +41,7 @@ export default function TodayView({ session }) {
   const ai = useAiPlan()
   const { theme, toggle: toggleTheme } = useTheme()
   const notifications = useNotifications(tasks, loading)
+  const planPrefs = usePlanPrefs()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
@@ -59,6 +61,9 @@ export default function TodayView({ session }) {
       : null
   const focus = aiFocus ?? selectFocusTasks(tasks)
   const stats = weekStats(tasks)
+
+  // Termine für den Tagesplan: echte aus Google, sonst die Beispiel-Timeline.
+  const planEvents = calendar.status === 'connected' ? calendar.events : timeline
 
   function openCreate() {
     setEditing(null)
@@ -106,13 +111,20 @@ export default function TodayView({ session }) {
         />
       )}
 
-      <Timeline
-        status={calendar.status}
-        events={calendar.events}
-        fallbackEvents={timeline}
-        error={calendar.error}
-        onConnect={calendar.connect}
-      />
+      {!loading && (
+        <DayPlan
+          tasks={openTasks}
+          events={planEvents}
+          calendarStatus={calendar.status}
+          onConnect={calendar.connect}
+          onToggle={toggleTask}
+          prefs={planPrefs}
+          ai={ai}
+          onOptimize={() =>
+            ai.generate({ tasks: openTasks, events: calendar.events })
+          }
+        />
+      )}
 
       {error && (
         <p className="mb-4 rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger">

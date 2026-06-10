@@ -1,0 +1,247 @@
+import { Check, Sparkles, Loader2, CalendarPlus } from 'lucide-react'
+import SectionTitle from './SectionTitle.jsx'
+import { areas } from '../data/dummyData.js'
+import { orderForToday } from '../lib/focus.js'
+import {
+  buildSchedule,
+  toMinutes,
+  toHHMM,
+  formatDuration,
+} from '../lib/scheduler.js'
+
+// "Dein Tagesplan" — der KI-Kalender (Motion-Idee).
+//
+// Legt deine offenen Tasks automatisch als Zeitblöcke in die freien Lücken
+// zwischen deinen Terminen, innerhalb deines Arbeitszeit-Fensters. Die
+// Reihenfolge/Dauer kommt entweder aus der einfachen Heuristik (immer da)
+// oder — auf Knopfdruck — von der KI (smartere Reihenfolge + Schätzungen).
+export default function DayPlan({
+  tasks,
+  events,
+  calendarStatus,
+  onConnect,
+  onToggle,
+  prefs,
+  ai,
+  onOptimize,
+}) {
+  const aiLoading = ai.status === 'loading'
+
+  // Reihenfolge + Dauer: KI-Plan, wenn vorhanden — sonst nach Dringlichkeit.
+  const aiSchedule =
+    ai.status === 'ready' && Array.isArray(ai.plan?.schedule) && ai.plan.schedule.length
+      ? ai.plan.schedule
+          .map((s) => {
+            const t = tasks.find((x) => x.id === s.id && !x.done)
+            return t
+              ? { ...t, duration_min: s.duration_min || t.duration_min, reason: s.reason }
+              : null
+          })
+          .filter(Boolean)
+      : null
+  const aiActive = Boolean(aiSchedule)
+  const ordered = aiSchedule ?? orderForToday(tasks)
+
+  const now = new Date()
+  const { blocks, unscheduled } = buildSchedule({
+    tasks: ordered,
+    events,
+    workStart: prefs.workStart,
+    workEnd: prefs.workEnd,
+    now: now.getHours() * 60 + now.getMinutes(),
+  })
+
+  // Termine + geplante Task-Blöcke zu einer Agenda mischen, nach Zeit sortiert.
+  const timedEvents = events.filter((e) => !e.allDay && e.start)
+  const allDayEvents = events.filter((e) => e.allDay)
+  const agenda = [
+    ...timedEvents.map((e) => ({
+      kind: 'event',
+      start: toMinutes(e.start),
+      label: e.start,
+      title: e.title,
+    })),
+    ...blocks.map((b) => ({
+      kind: 'task',
+      start: b.start,
+      label: toHHMM(b.start),
+      end: toHHMM(b.end),
+      task: b.task,
+      reason: b.task.reason,
+    })),
+  ].sort((a, b) => a.start - b.start)
+
+  return (
+    <section className="mb-10">
+      <SectionTitle
+        aside={
+          tasks.length > 0 ? (
+            <button
+              type="button"
+              onClick={onOptimize}
+              disabled={aiLoading}
+              className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium transition-colors hover:border-ink/30 disabled:opacity-50"
+            >
+              {aiLoading ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Sparkles size={12} className="text-area-study" />
+              )}
+              {aiLoading ? 'Plant …' : aiActive ? 'KI-optimiert' : 'Mit KI optimieren'}
+            </button>
+          ) : null
+        }
+      >
+        Dein Tagesplan
+      </SectionTitle>
+
+      {/* Arbeitszeit-Fenster */}
+      <div className="mb-3 flex items-center gap-2 text-sm text-ink-soft">
+        <span>Arbeitszeit</span>
+        <input
+          type="time"
+          value={prefs.workStart}
+          onChange={(e) => prefs.setWorkStart(e.target.value)}
+          aria-label="Arbeitsbeginn"
+          className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
+        />
+        <span>–</span>
+        <input
+          type="time"
+          value={prefs.workEnd}
+          onChange={(e) => prefs.setWorkEnd(e.target.value)}
+          aria-label="Arbeitsende"
+          className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
+        />
+      </div>
+
+      {/* Ganztägige Termine als Hinweis */}
+      {allDayEvents.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {allDayEvents.map((e) => (
+            <span
+              key={e.id}
+              className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink-soft"
+            >
+              📌 {e.title}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
+
+      {agenda.length === 0 ? (
+        <p className="rounded-2xl border border-line bg-surface p-5 text-sm text-ink-soft">
+          {tasks.length === 0
+            ? 'Keine offenen Tasks — nichts zu planen. Genieß den Tag ✨'
+            : 'Außerhalb deiner Arbeitszeit — passe das Fenster oben an, um zu planen.'}
+        </p>
+      ) : (
+        <ul className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
+          {agenda.map((item, i) =>
+            item.kind === 'event' ? (
+              <EventRow key={`e${i}`} item={item} last={i === agenda.length - 1} />
+            ) : (
+              <TaskRow
+                key={item.task.id}
+                item={item}
+                last={i === agenda.length - 1}
+                onToggle={onToggle}
+              />
+            ),
+          )}
+        </ul>
+      )}
+
+      {/* Was heute nicht mehr reinpasst */}
+      {unscheduled.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-line bg-surface px-5 py-4">
+          <p className="text-sm font-medium">
+            Passt heute nicht mehr rein ({unscheduled.length})
+          </p>
+          <ul className="mt-2 space-y-1">
+            {unscheduled.map((t) => (
+              <li key={t.id} className="flex items-center gap-2 text-sm text-ink-soft">
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: areas[t.area].color }}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{t.title}</span>
+                <span className="ml-auto shrink-0 text-xs">
+                  {formatDuration(t.duration_min)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Tipp: echten Kalender verbinden */}
+      {(calendarStatus === 'idle' || calendarStatus === 'error') && (
+        <button
+          type="button"
+          onClick={onConnect}
+          className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+        >
+          <CalendarPlus size={15} />
+          Google Kalender verbinden, um echte Termine einzuplanen
+        </button>
+      )}
+    </section>
+  )
+}
+
+// Eine Zeile: fixer Termin (grau, nicht abhakbar).
+function EventRow({ item, last }) {
+  return (
+    <li className="flex gap-3">
+      <div className="w-12 shrink-0 pt-0.5 text-right text-sm tabular-nums text-ink-soft">
+        {item.label}
+      </div>
+      <div className="relative flex flex-col items-center">
+        <span
+          className="mt-1.5 size-2.5 rounded-full bg-ink-soft ring-4 ring-surface"
+          aria-hidden="true"
+        />
+        {!last && <span className="w-px grow bg-line" aria-hidden="true" />}
+      </div>
+      <div className="pb-5">
+        <p className="font-medium leading-snug">{item.title}</p>
+        <p className="text-xs text-ink-soft">Termin</p>
+      </div>
+    </li>
+  )
+}
+
+// Eine Zeile: geplanter Task-Block (Bereichsfarbe, abhakbar).
+function TaskRow({ item, last, onToggle }) {
+  const area = areas[item.task.area]
+  return (
+    <li className="flex gap-3">
+      <div className="w-12 shrink-0 pt-0.5 text-right text-sm tabular-nums text-ink-soft">
+        {item.label}
+      </div>
+      <div className="relative flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => onToggle(item.task.id)}
+          aria-label="Als erledigt markieren"
+          className="mt-1 grid size-4 place-items-center rounded-full border-2 ring-4 ring-surface transition-colors"
+          style={{ borderColor: area.color }}
+        >
+          <Check size={10} strokeWidth={3} style={{ color: area.color }} className="opacity-0 hover:opacity-100" />
+        </button>
+        {!last && <span className="w-px grow bg-line" aria-hidden="true" />}
+      </div>
+      <div className="pb-5">
+        <p className="font-medium leading-snug">{item.task.title}</p>
+        <p className="text-xs text-ink-soft">
+          {item.label}–{item.end}
+          {item.reason ? ` · ${item.reason}` : ''}
+        </p>
+      </div>
+    </li>
+  )
+}

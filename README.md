@@ -49,6 +49,25 @@ Google Calendar) — die UI bleibt unverändert.
    mit Suche und Bereichsfilter
 5. **+ Task** — schwebender Button zum Erfassen
 
+## KI-Tagesplan (Auto-Scheduler)
+
+Das Herzstück — wie bei [Motion](https://www.usemotion.com/): Clarity legt
+deine offenen Tasks automatisch als Zeitblöcke in die freien Lücken zwischen
+deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
+
+- Jede Task hat eine **geschätzte Dauer** (15 Min – 2 Std, im Task-Formular).
+- Der **Scheduler** (`src/lib/scheduler.js`) ist eine reine, deterministische
+  Funktion: er packt die Tasks verlässlich um deine Termine herum — läuft
+  immer, auch ohne KI-Key.
+- **„Mit KI optimieren"** ruft Groq auf: die KI bestimmt eine smartere
+  Reihenfolge, schätzt fehlende Dauern und liefert kurze Begründungen. Fällt
+  die KI aus, bleibt der deterministische Plan stehen.
+- Das **Arbeitszeit-Fenster** stellst du direkt im Tagesplan ein (gemerkt im
+  Browser). Tasks, die heute nicht mehr reinpassen, landen in einer eigenen
+  Liste.
+- Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
+  herum; ohne dienen Beispiel-Termine als Demo.
+
 ## Weitere Funktionen
 
 - **Wiederkehrende Tasks**: beim Anlegen/Bearbeiten "Täglich" oder
@@ -140,4 +159,5 @@ läuft (nicht im Browser).
 | 2 ✅  | Tasks speichern + Login (Supabase) · Google Calendar (Timeline) |
 | 3 ✅  | KI-Priorisierung + Tagesüberblick (Groq, serverless) |
 | 4 ✅  | Voice Capture, Focus Mode, Dark Mode, wiederkehrende Tasks, Erinnerungen, Wochenrückblick, Suche/Filter, Undo |
-| 5     | Onboarding, tiefere Mustererkennung |
+| 5 ✅  | KI-Tagesplan / Auto-Scheduler (Tasks automatisch in den Kalender einplanen) |
+| 6     | Onboarding, tiefere Mustererkennung |

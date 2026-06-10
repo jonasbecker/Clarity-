@@ -12,6 +12,9 @@ const REPEATS = [
   { id: 'weekly', label: 'Wöchentlich' },
 ]
 
+// Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
+const DURATIONS = [15, 30, 45, 60, 90, 120]
+
 // Formular zum Erfassen ODER Bearbeiten einer Task.
 //
 // Ein Modal für beides: ohne `task` ist es "neu", mit `task` ist es
@@ -34,6 +37,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // null | 'daily' | 'weekly'
+  const [duration, setDuration] = useState(30) // geschätzte Dauer in Minuten
 
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
   const speech = useSpeech({ onResult: (text) => setTitle(text) })
@@ -46,6 +50,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
     setDueDate(task?.due_date ?? null)
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
+    setDuration(task?.duration_min ?? 30)
   }, [open, task])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
@@ -75,6 +80,7 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
       due_date: dueDate,
       description: description.trim() || null,
       repeat,
+      duration_min: duration,
     })
     onClose()
   }
@@ -170,6 +176,31 @@ export default function TaskModal({ open, onClose, onSubmit, onDelete, task }) {
                   }}
                 >
                   {a.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Dauer (für den Tagesplan) */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Dauer <span className="font-normal">(für den Tagesplan)</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {DURATIONS.map((d) => {
+              const active = duration === d
+              const label = d < 60 ? `${d} Min` : d === 60 ? '1 Std' : `${d / 60} Std`
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDuration(d)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  {label}
                 </button>
               )
             })}

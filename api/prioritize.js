@@ -44,26 +44,33 @@ export default async function handler(req, res) {
   }).format(new Date())
 
   const system =
-    'Du bist ein knapper, freundlicher Planungs-Assistent. Du hilfst, die ' +
-    'wichtigsten Aufgaben des Tages auszuwählen. Antworte AUSSCHLIESSLICH ' +
-    'mit gültigem JSON, ohne Fließtext drumherum.'
+    'Du bist ein knapper, freundlicher Planungs-Assistent (wie Motion). Du ' +
+    'priorisierst Aufgaben und planst einen realistischen Tag. Antworte ' +
+    'AUSSCHLIESSLICH mit gültigem JSON, ohne Fließtext drumherum.'
 
   const user = `Heute ist ${today}.
 
-Offene Tasks (JSON):
+Offene Tasks (JSON, "duration_min" = bisher geschätzte Dauer in Minuten):
 ${JSON.stringify(tasks)}
 
 Heutige Termine (JSON):
 ${JSON.stringify(events)}
 
-Wähle die 1-3 wichtigsten Tasks für heute. Berücksichtige Fälligkeit
-("Heute"/"Überfällig" zuerst), Bereich, optionale Beschreibung und die
-Termine (wenig Zeit -> kürzere Tasks).
+Aufgaben:
+1. Wähle die 1-3 wichtigsten Tasks für heute (focus). Berücksichtige
+   Fälligkeit ("Heute"/"Überfällig" zuerst), Bereich und Beschreibung.
+2. Erstelle einen geordneten Tagesplan (schedule) ALLER Tasks, die heute
+   sinnvoll machbar sind — wichtigste/dringendste zuerst. Schätze für jede
+   eine realistische Dauer in Minuten (duration_min, Vielfache von 5,
+   typisch 15-120). Bei viel Termin-Last weniger einplanen.
 
 Antworte exakt in diesem JSON-Format:
 {
   "focus": [
-    { "id": "<exakt die id aus der Eingabe>", "reason": "<kurzer Grund, max 8 Wörter, deutsch>" }
+    { "id": "<id aus der Eingabe>", "reason": "<kurzer Grund, max 8 Wörter, deutsch>" }
+  ],
+  "schedule": [
+    { "id": "<id aus der Eingabe>", "duration_min": <ganzzahl>, "reason": "<kurzer Grund, max 6 Wörter, deutsch>" }
   ],
   "summary": "<ein motivierender Satz Tagesüberblick, deutsch>"
 }
@@ -79,7 +86,7 @@ Verwende nur ids, die in den offenen Tasks vorkommen. Wichtigste zuerst.`
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.3,
-        max_tokens: 500,
+        max_tokens: 900,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: system },
@@ -111,8 +118,22 @@ Verwende nur ids, die in den offenen Tasks vorkommen. Wichtigste zuerst.`
       .slice(0, 3)
       .map((f) => ({ id: f.id, reason: String(f.reason || '').slice(0, 80) }))
 
+    // Tagesplan säubern: echte ids, keine Doppelten, Dauer in Grenzen.
+    const seen = new Set()
+    const schedule = (Array.isArray(plan.schedule) ? plan.schedule : [])
+      .filter((s) => s && validIds.has(s.id) && !seen.has(s.id) && seen.add(s.id))
+      .map((s) => {
+        const d = Math.round(Number(s.duration_min))
+        return {
+          id: s.id,
+          duration_min: Number.isFinite(d) ? Math.min(480, Math.max(5, d)) : 30,
+          reason: String(s.reason || '').slice(0, 60),
+        }
+      })
+
     return res.status(200).json({
       focus,
+      schedule,
       summary: typeof plan.summary === 'string' ? plan.summary : '',
     })
   } catch (e) {

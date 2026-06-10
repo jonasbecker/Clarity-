@@ -15,8 +15,9 @@ export async function fetchAiPlan({ tasks, events }) {
         area: t.area,
         due: formatDueLabel(t.due_date),
         description: t.description || undefined,
+        duration_min: t.duration_min || undefined,
       })),
-      events: events.map((e) => ({ title: e.title, start: e.start })),
+      events: events.map((e) => ({ title: e.title, start: e.start, end: e.end })),
     }),
   })
 
@@ -33,5 +34,5 @@ export async function fetchAiPlan({ tasks, events }) {
     throw new Error(msg)
   }
 
-  return res.json() // { focus: [{id, reason}], summary }
+  return res.json() // { focus: [{id, reason}], schedule: [{id, duration_min, reason}], summary }
 }
