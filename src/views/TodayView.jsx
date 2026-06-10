@@ -6,6 +6,7 @@ import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
+import StatsView from '../components/StatsView.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import ReminderBanner from '../components/ReminderBanner.jsx'
 import WeekReview from '../components/WeekReview.jsx'
@@ -59,6 +60,7 @@ export default function TodayView({ session }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
+  const [statsOpen, setStatsOpen] = useState(false)
   const searchInputRef = useRef(null)
 
   // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
@@ -125,9 +127,9 @@ export default function TodayView({ session }) {
     setModalOpen(true)
   }
 
-  // Tastatur-Shortcuts (nur wenn weder Modal noch Fokus offen sind).
+  // Tastatur-Shortcuts (nur wenn weder Modal noch Fokus/Statistik offen sind).
   useKeyboardShortcuts({
-    enabled: !modalOpen && !focusOpen,
+    enabled: !modalOpen && !focusOpen && !statsOpen,
     onNew: openCreate,
     onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
@@ -156,6 +158,7 @@ export default function TodayView({ session }) {
         theme={theme}
         onToggleTheme={toggleTheme}
         onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
+        onOpenStats={() => setStatsOpen(true)}
         progress={loading ? null : todayProgress}
       />
 
@@ -243,6 +246,8 @@ export default function TodayView({ session }) {
       )}
 
       {onboarding.open && <Onboarding onClose={onboarding.dismiss} />}
+
+      {statsOpen && <StatsView tasks={tasks} onClose={() => setStatsOpen(false)} />}
     </main>
   )
 }

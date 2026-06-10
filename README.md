@@ -122,6 +122,10 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   oben sortiert.
 - **Tastatur-Shortcuts**: `n` neue Task, `/` Suche fokussieren, `f`
   Fokus-Modus — greifen nicht, während du in einem Eingabefeld tippst.
+- **Statistik**: ein Knopf im Header (Balkendiagramm-Icon) öffnet eine
+  Vollbild-Übersicht deiner erledigten Tasks — Gesamtzahl, aktuelle Serie,
+  Verteilung nach Bereich und Tageszeit, sowie ein Wochentrend der letzten
+  6 Wochen. Zeigt einen Hinweis, solange noch nichts erledigt wurde.
 
 ## Tasks speichern mit Supabase (optional)
 
@@ -200,4 +204,4 @@ läuft (nicht im Browser).
 | 3 ✅  | KI-Priorisierung + Tagesüberblick (Groq, serverless) |
 | 4 ✅  | Voice Capture, Focus Mode, Dark Mode, wiederkehrende Tasks, Erinnerungen, Wochenrückblick, Suche/Filter, Undo |
 | 5 ✅  | KI-Tagesplan / Auto-Scheduler (Tasks automatisch in den Kalender einplanen) |
-| 6     | Onboarding, tiefere Mustererkennung |
+| 6 ✅  | Onboarding, Statistik/Mustererkennung |

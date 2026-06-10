@@ -76,3 +76,12 @@ export function isOverdue(iso) {
   const diff = daysUntil(iso)
   return diff != null && diff < 0
 }
+
+// Montag der Woche, in der `date` liegt (00:00 Uhr lokal).
+export function startOfWeek(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay() // 0 = So … 6 = Sa
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
+  return d
+}
