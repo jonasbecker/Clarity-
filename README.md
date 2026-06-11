@@ -158,6 +158,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   priorisierte Liste der nächsten Schritte — Schritte mit Bezug zu einer Aufgabe
   öffnen diese direkt. Läuft über dieselbe Server-Funktion/denselben Groq-Key wie
   der KI-Tagesplan (nur auf der veröffentlichten Seite; ohne Key ein Hinweis).
+- **Lernumgebung**: der Bereich „Lernen" bietet eine ablenkungsfreie Seite mit
+  **Pomodoro-Timer** (Fokus/Pause, Start/Pause/Skip/Reset, 25/5 oder 50/10) und
+  **Hintergrundklängen** (Regen/Rauschen/Wind), die live per Web Audio API erzeugt
+  werden — keine Audiodateien, garantiert kostenlos. Darunter erscheinen nur die
+  heute fälligen/überfälligen Lernaufgaben.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

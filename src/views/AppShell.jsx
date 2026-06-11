@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { CalendarDays, GraduationCap } from 'lucide-react'
+import { CalendarDays, GraduationCap, Timer } from 'lucide-react'
 import NavBar from '../components/NavBar.jsx'
 import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
+import LearningEnv from './LearningEnv.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import StatsView from '../components/StatsView.jsx'
@@ -67,6 +68,7 @@ export default function AppShell({ session }) {
   const navItems = [
     { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
+    { id: 'env', label: 'Lernen', icon: Timer },
   ]
 
   // Hub-Kachel öffnet die Fach-Detailseite.
@@ -138,6 +140,10 @@ export default function AppShell({ session }) {
           focusArea={areaJump}
           focusCourse={courseJump}
         />
+      )}
+
+      {view === 'env' && (
+        <LearningEnv tasks={tasksApi.tasks} onToggle={tasksApi.toggleTask} />
       )}
 
       {detailCourse && (
