@@ -1,4 +1,4 @@
-import TodayView from './views/TodayView.jsx'
+import AppShell from './views/AppShell.jsx'
 import Login from './views/Login.jsx'
 import { useAuth } from './lib/useAuth.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
@@ -6,7 +6,7 @@ import { isSupabaseConfigured } from './lib/supabase.js'
 // Die App-Wurzel entscheidet, was angezeigt wird:
 // - Ohne Supabase-Schlüssel: Demo-Modus (Tasks lokal, ohne Speichern).
 // - Mit Schlüsseln, aber nicht eingeloggt: Login-Bildschirm.
-// - Eingeloggt: die Heute-View mit den echten Tasks.
+// - Eingeloggt: die App-Shell (Studium-Hub als Start, „Heute" als Bereich).
 export default function App() {
   const { session, loading } = useAuth()
 
@@ -22,5 +22,5 @@ export default function App() {
     return <Login />
   }
 
-  return <TodayView session={session} />
+  return <AppShell session={session} />
 }

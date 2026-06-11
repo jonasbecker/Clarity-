@@ -136,12 +136,12 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   „Lernthemen". Der Fortschritt der Lernthemen (z.B. „2/4") zeigt, wie weit die
   Vorbereitung ist. Im Tagesplan rückt die Vorbereitung schon einige Tage vor
   der Klausur nach vorne, statt erst am Klausurtag aufzutauchen.
-- **Studium-Dashboard**: ein Knopf im Header (Doktorhut-Icon) öffnet eine
-  Vollbild-Übersicht fürs Studium — anstehende Klausuren mit Countdown und
-  Lernfortschritt, alle Kurse mit offenen Tasks/nächster Deadline (Tippen
-  filtert die Liste danach) sowie ein **Notenspiegel**: ECTS-gewichteter
-  Notenschnitt, geschaffte ECTS und der Schnitt je Semester. Noten/ECTS lassen
-  sich pro Kurs direkt bearbeiten.
+- **Studium-Hub als Startseite**: Clarity startet im **Studium-Hub** — Kennzahlen
+  (Notenschnitt, ECTS, Klausuren), anstehende Klausuren mit Countdown und
+  Lernfortschritt, eine Kachel-Galerie deiner aktuellen Kurse (Tippen springt zur
+  gefilterten Aufgabenliste) und der **Notenspiegel** (ECTS-gewichteter Schnitt je
+  Semester). Über die obere Navigation wechselst du zwischen **Studium** und
+  **Heute** (Tagesplan/Fokus); archivierte Kurse bleiben außen vor.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.
@@ -243,3 +243,4 @@ läuft (nicht im Browser).
 | 5 ✅  | KI-Tagesplan / Auto-Scheduler (Tasks automatisch in den Kalender einplanen) |
 | 6 ✅  | Onboarding, Statistik/Mustererkennung |
 | 7 ✅  | Studium: Kurse/Module, Klausuren mit Lernfortschritt, Notenspiegel (ECTS), Studium-Dashboard |
+| 8 🚧  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |

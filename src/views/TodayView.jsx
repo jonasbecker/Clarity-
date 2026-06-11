@@ -7,73 +7,58 @@ import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
-import StatsView from '../components/StatsView.jsx'
-import StudyDashboard from '../components/StudyDashboard.jsx'
-import DemoBanner from '../components/DemoBanner.jsx'
-import ReminderBanner from '../components/ReminderBanner.jsx'
 import WeekReview from '../components/WeekReview.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
-import Toast from '../components/Toast.jsx'
-import Onboarding from '../components/Onboarding.jsx'
-import OfflineBanner from '../components/OfflineBanner.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
-import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
-import { useTheme } from '../lib/useTheme.js'
-import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
-import { useCourses } from '../lib/useCourses.js'
-import { useOnboarding } from '../lib/useOnboarding.js'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
-import { useOnline } from '../lib/useOnline.js'
-import { useAppBadge } from '../lib/useAppBadge.js'
 import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
-import { toISODate, isOverdue } from '../lib/date.js'
-import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
+import { toISODate } from '../lib/date.js'
 import { user, timeline } from '../data/dummyData.js'
 
-// Die "Heute-View".
+// Die "Heute-View" — Tagesplan, Fokus und die offenen Tasks.
 //
-// Tasks kommen aus useTasks (Supabase oder Demo), die Timeline aus
-// useGoogleCalendar, "Fokus heute" wird aus den echten Tasks abgeleitet.
-export default function TodayView({ session }) {
-  const {
-    tasks,
-    loading,
-    error,
-    addTask,
-    editTask,
-    toggleTask,
-    removeTask,
-    pendingDelete,
-    undoDelete,
-    refresh,
-  } = useTasks(session)
+// Tasks und Kurse kommen jetzt als Props aus der App-Shell (damit der Hub und
+// „Heute" denselben State teilen); die Timeline aus useGoogleCalendar, „Fokus
+// heute" wird aus den echten Tasks abgeleitet. `focusArea`/`focusCourse` sind
+// Sprünge aus Statistik bzw. Studium-Hub, die die Liste vorfiltern.
+export default function TodayView({
+  session,
+  tasks,
+  loading,
+  error,
+  addTask,
+  editTask,
+  toggleTask,
+  removeTask,
+  refresh,
+  courses,
+  addCourse,
+  editCourse,
+  removeCourse,
+  focusArea,
+  focusCourse,
+}) {
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
   const aiWeek = useAiWeek()
-  const { theme, toggle: toggleTheme } = useTheme()
-  const notifications = useNotifications(tasks, loading)
   const planPrefs = usePlanPrefs()
   const planOrder = usePlanOrder()
   const { templates, addTemplate, removeTemplate } = useTemplates(session)
-  const { courses, addCourse, editCourse, removeCourse } = useCourses(session)
-  const onboarding = useOnboarding()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
-  const [statsOpen, setStatsOpen] = useState(false)
-  const [studyOpen, setStudyOpen] = useState(false)
   // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
   // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
   // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
@@ -81,11 +66,6 @@ export default function TodayView({ session }) {
   const [editingCourse, setEditingCourse] = useState(null)
   const [courseFromTask, setCourseFromTask] = useState(false)
   const [coursePick, setCoursePick] = useState(null)
-  // Bereichs-Sprung aus der Statistik in die Liste ({ area, key }); key sorgt
-  // dafür, dass auch wiederholte Klicks auf denselben Bereich greifen.
-  const [areaJump, setAreaJump] = useState(null)
-  // Kurs-Sprung aus dem Studium-Dashboard in die Liste ({ id, key }).
-  const [courseJump, setCourseJump] = useState(null)
   const searchInputRef = useRef(null)
 
   // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
@@ -102,8 +82,6 @@ export default function TodayView({ session }) {
   const focus = aiFocus ?? selectFocusTasks(tasks)
   const stats = weekStats(tasks)
 
-  // Termine nach Tag gruppieren (für die Mehrtages-Planung): echte aus Google
-  // über mehrere Tage, sonst die Beispiel-Timeline nur für heute.
   const todayISO = toISODate(new Date())
 
   // Tagesfortschritt: alle für heute fälligen Tasks (offen + heute erledigt).
@@ -113,19 +91,8 @@ export default function TodayView({ session }) {
     total: todayTasks.length,
   }
 
-  // App-Icon-Badge + Offline-Hinweis. Badge zeigt, was heute noch offen oder
-  // überfällig ist — direkt am Homescreen-Icon.
-  const online = useOnline()
-  const badgeCount = openTasks.filter(
-    (t) => t.due_date === todayISO || isOverdue(t.due_date),
-  ).length
-  useAppBadge(badgeCount)
-
-  // Pull-to-Refresh (nur sinnvoll mit offenen Overlays aus → enabled).
-  const pull = usePullToRefresh(
-    refresh,
-    !modalOpen && !focusOpen && !statsOpen && !studyOpen && !courseModalOpen,
-  )
+  // Pull-to-Refresh (nur sinnvoll, wenn keine Overlays offen sind).
+  const pull = usePullToRefresh(refresh, !modalOpen && !focusOpen && !courseModalOpen)
 
   const eventsByDate =
     calendar.status === 'connected'
@@ -166,9 +133,9 @@ export default function TodayView({ session }) {
     setModalOpen(true)
   }
 
-  // Tastatur-Shortcuts (nur wenn weder Modal noch Fokus/Statistik offen sind).
+  // Tastatur-Shortcuts (nur wenn weder Task- noch Kurs-/Fokus-Modal offen ist).
   useKeyboardShortcuts({
-    enabled: !modalOpen && !focusOpen && !statsOpen && !studyOpen,
+    enabled: !modalOpen && !focusOpen && !courseModalOpen,
     onNew: openCreate,
     onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
@@ -218,32 +185,14 @@ export default function TodayView({ session }) {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
+    <main className="mx-auto w-full max-w-3xl px-5 pb-28 pt-2 sm:px-8 sm:pt-4">
       <PullToRefresh
         distance={pull.distance}
         refreshing={pull.refreshing}
         active={pull.active}
       />
 
-      <Header
-        name={user.name}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
-        onOpenStudy={() => setStudyOpen(true)}
-        onOpenStats={() => setStatsOpen(true)}
-        progress={loading ? null : todayProgress}
-      />
-
-      <OfflineBanner online={online} />
-
-      {!isSupabaseConfigured && <DemoBanner />}
-
-      <ReminderBanner
-        supported={notifications.supported}
-        permission={notifications.permission}
-        onEnable={notifications.enable}
-      />
+      <Header name={user.name} progress={loading ? null : todayProgress} />
 
       {!loading && <WeekReview stats={stats} />}
 
@@ -253,9 +202,7 @@ export default function TodayView({ session }) {
         summary={ai.status === 'ready' ? ai.plan?.summary : null}
         aiStatus={ai.status}
         aiError={ai.error}
-        onGenerate={() =>
-          ai.generate({ tasks: openTasks, events: todayEvents })
-        }
+        onGenerate={() => ai.generate({ tasks: openTasks, events: todayEvents })}
         onStartFocus={() => setFocusOpen(true)}
       />
 
@@ -269,9 +216,7 @@ export default function TodayView({ session }) {
         prefs={planPrefs}
         ai={ai}
         aiWeek={aiWeek}
-        onOptimize={() =>
-          ai.generate({ tasks: openTasks, events: todayEvents })
-        }
+        onOptimize={() => ai.generate({ tasks: openTasks, events: todayEvents })}
         planOrder={planOrder}
       />
 
@@ -296,9 +241,9 @@ export default function TodayView({ session }) {
           if (t && t.area !== area) editTask(id, { area })
         }}
         searchInputRef={searchInputRef}
-        focusArea={areaJump}
+        focusArea={focusArea}
         courses={courses}
-        focusCourse={courseJump}
+        focusCourse={focusCourse}
       />
 
       <AddTaskButton onClick={openCreate} />
@@ -328,40 +273,6 @@ export default function TodayView({ session }) {
           tasks={focusQueue}
           onToggle={toggleTask}
           onClose={() => setFocusOpen(false)}
-        />
-      )}
-
-      {pendingDelete && (
-        <Toast
-          message={`„${pendingDelete.task.title}" gelöscht`}
-          actionLabel="Rückgängig"
-          onAction={undoDelete}
-        />
-      )}
-
-      {onboarding.open && <Onboarding onClose={onboarding.dismiss} />}
-
-      {statsOpen && (
-        <StatsView
-          tasks={tasks}
-          onClose={() => setStatsOpen(false)}
-          onFilterArea={(area) => {
-            setAreaJump({ area, key: Date.now() })
-            setStatsOpen(false)
-          }}
-        />
-      )}
-
-      {studyOpen && (
-        <StudyDashboard
-          tasks={tasks}
-          courses={courses}
-          onClose={() => setStudyOpen(false)}
-          onEditCourse={(course) => openCourseModal(course, false)}
-          onFilterCourse={(id) => {
-            setCourseJump({ id, key: Date.now() })
-            setStudyOpen(false)
-          }}
         />
       )}
     </main>

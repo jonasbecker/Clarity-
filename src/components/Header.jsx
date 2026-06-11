@@ -52,14 +52,16 @@ export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenSt
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onToggleTheme}
-          aria-label={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
-          className="grid size-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface"
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        {onToggleTheme && (
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
+            className="grid size-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        )}
 
         {onSignOut && (
           <button

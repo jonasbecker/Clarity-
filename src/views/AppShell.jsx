@@ -1,0 +1,142 @@
+import { useState } from 'react'
+import { CalendarDays, GraduationCap } from 'lucide-react'
+import NavBar from '../components/NavBar.jsx'
+import StudyHub from './StudyHub.jsx'
+import TodayView from './TodayView.jsx'
+import StatsView from '../components/StatsView.jsx'
+import DemoBanner from '../components/DemoBanner.jsx'
+import OfflineBanner from '../components/OfflineBanner.jsx'
+import ReminderBanner from '../components/ReminderBanner.jsx'
+import Onboarding from '../components/Onboarding.jsx'
+import Toast from '../components/Toast.jsx'
+import { useTasks } from '../lib/useTasks.js'
+import { useCourses } from '../lib/useCourses.js'
+import { usePapers } from '../lib/usePapers.js'
+import { useChores } from '../lib/useChores.js'
+import { useTheme } from '../lib/useTheme.js'
+import { useNotifications } from '../lib/useNotifications.js'
+import { useOnboarding } from '../lib/useOnboarding.js'
+import { useOnline } from '../lib/useOnline.js'
+import { useAppBadge } from '../lib/useAppBadge.js'
+import { toISODate, isOverdue } from '../lib/date.js'
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
+import { user } from '../data/dummyData.js'
+
+// Die App-Shell hält die bereichsübergreifend geteilten Daten (Tasks, Kurse,
+// Quellen, To-Dos, Theme) an EINER Stelle und reicht sie an die einzelnen
+// Bereiche (Studium-Hub, Heute, …) als Props durch. So teilen sich alle
+// Ansichten denselben Task-State — Änderungen im Hub und in „Heute" bleiben
+// konsistent. Die Navigation läuft ohne Router über einen einfachen
+// `view`-State.
+//
+// Start ist der Studium-Hub: Clarity ist in erster Linie ein Studienplaner.
+export default function AppShell({ session }) {
+  const tasksApi = useTasks(session)
+  const coursesApi = useCourses(session)
+  const papersApi = usePapers(session)
+  const choresApi = useChores(session)
+  const { theme, toggle: toggleTheme } = useTheme()
+  const notifications = useNotifications(tasksApi.tasks, tasksApi.loading)
+  const onboarding = useOnboarding()
+  const online = useOnline()
+
+  const [view, setView] = useState('hub')
+  const [statsOpen, setStatsOpen] = useState(false)
+  // Sprünge in die „Heute"-Liste: Bereichs-Filter (aus der Statistik) bzw.
+  // Kurs-Filter (aus dem Hub). `key` sorgt dafür, dass auch wiederholte
+  // Klicks denselben Filter erneut auslösen.
+  const [areaJump, setAreaJump] = useState(null)
+  const [courseJump, setCourseJump] = useState(null)
+
+  // App-Icon-Badge: was heute noch offen oder überfällig ist.
+  const todayISO = toISODate(new Date())
+  const badgeCount = tasksApi.tasks.filter(
+    (t) => !t.done && (t.due_date === todayISO || isOverdue(t.due_date)),
+  ).length
+  useAppBadge(badgeCount)
+
+  const navItems = [
+    { id: 'hub', label: 'Studium', icon: GraduationCap },
+    { id: 'today', label: 'Heute', icon: CalendarDays },
+  ]
+
+  function openCourse(id) {
+    setCourseJump({ id, key: Date.now() })
+    setView('today')
+  }
+
+  return (
+    <div className="min-h-screen">
+      <NavBar
+        items={navItems}
+        view={view}
+        onNavigate={setView}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onOpenStats={() => setStatsOpen(true)}
+        onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
+      />
+
+      <div className="mx-auto w-full max-w-3xl px-5 pt-4 sm:px-8">
+        <OfflineBanner online={online} />
+        {!isSupabaseConfigured && <DemoBanner />}
+        <ReminderBanner
+          supported={notifications.supported}
+          permission={notifications.permission}
+          onEnable={notifications.enable}
+        />
+      </div>
+
+      {view === 'hub' && (
+        <StudyHub
+          name={user.name}
+          tasks={tasksApi.tasks}
+          courses={coursesApi.courses}
+          onOpenCourse={openCourse}
+        />
+      )}
+
+      {view === 'today' && (
+        <TodayView
+          session={session}
+          tasks={tasksApi.tasks}
+          loading={tasksApi.loading}
+          error={tasksApi.error}
+          addTask={tasksApi.addTask}
+          editTask={tasksApi.editTask}
+          toggleTask={tasksApi.toggleTask}
+          removeTask={tasksApi.removeTask}
+          refresh={tasksApi.refresh}
+          courses={coursesApi.courses}
+          addCourse={coursesApi.addCourse}
+          editCourse={coursesApi.editCourse}
+          removeCourse={coursesApi.removeCourse}
+          focusArea={areaJump}
+          focusCourse={courseJump}
+        />
+      )}
+
+      {statsOpen && (
+        <StatsView
+          tasks={tasksApi.tasks}
+          onClose={() => setStatsOpen(false)}
+          onFilterArea={(area) => {
+            setAreaJump({ area, key: Date.now() })
+            setStatsOpen(false)
+            setView('today')
+          }}
+        />
+      )}
+
+      {tasksApi.pendingDelete && (
+        <Toast
+          message={`„${tasksApi.pendingDelete.task.title}" gelöscht`}
+          actionLabel="Rückgängig"
+          onAction={tasksApi.undoDelete}
+        />
+      )}
+
+      {onboarding.open && <Onboarding onClose={onboarding.dismiss} />}
+    </div>
+  )
+}
