@@ -1,14 +1,24 @@
-import { useEffect } from 'react'
-import { X, Trophy, Flame, Clock, CalendarDays, BarChart3 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, Trophy, Flame, Clock, CalendarDays, BarChart3, Gauge } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { productivityStats } from '../lib/productivity.js'
 import { weekStats } from '../lib/stats.js'
 import BarChart from './BarChart.jsx'
 
+// Wählbare Zeitfenster für die Auswertung.
+const RANGES = [
+  { weeks: 4, label: '4 Wochen' },
+  { weeks: 12, label: '12 Wochen' },
+  { weeks: 26, label: '26 Wochen' },
+]
+
 // Vollbild-Statistik: Mustererkennung aus erledigten Tasks (`completed_at`).
 // Folgt dem Overlay-Muster aus FocusMode (Escape schließt, Hintergrund
-// gesperrt).
-export default function StatsView({ tasks, onClose }) {
+// gesperrt). `onFilterArea(areaId)` (optional) schließt die Ansicht und
+// filtert die Task-Liste nach dem geklickten Bereich.
+export default function StatsView({ tasks, onClose, onFilterArea }) {
+  const [weeks, setWeeks] = useState(12)
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -19,10 +29,11 @@ export default function StatsView({ tasks, onClose }) {
     }
   }, [onClose])
 
-  const stats = productivityStats(tasks)
+  const stats = productivityStats(tasks, weeks)
   const week = weekStats(tasks)
 
   const areaData = Object.entries(stats.byArea).map(([id, value]) => ({
+    id,
     label: areas[id].label,
     value,
     color: areas[id].color,
@@ -43,6 +54,27 @@ export default function StatsView({ tasks, onClose }) {
           </button>
         </div>
 
+        {/* Zeitraum-Umschalter */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {RANGES.map((r) => {
+            const active = weeks === r.weeks
+            return (
+              <button
+                key={r.weeks}
+                type="button"
+                onClick={() => setWeeks(r.weeks)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? 'border-ink bg-ink text-canvas'
+                    : 'border-line text-ink-soft hover:border-ink/30'
+                }`}
+              >
+                {r.label}
+              </button>
+            )
+          })}
+        </div>
+
         {stats.total === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-10 text-center text-sm text-ink-soft">
             <BarChart3 size={20} />
@@ -52,14 +84,22 @@ export default function StatsView({ tasks, onClose }) {
           <>
             <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard icon={Trophy} label="Insgesamt erledigt" value={stats.total} />
+              <MetricCard icon={Gauge} label="Ø pro Woche" value={stats.avgPerWeek} />
               <MetricCard icon={Flame} label="Aktuelle Serie" value={`${week.streak} Tage`} />
               <MetricCard icon={Clock} label="Beste Zeit" value={stats.bestTimeOfDay ?? '–'} />
-              <MetricCard icon={CalendarDays} label="Bester Tag" value={stats.bestWeekday ?? '–'} />
             </div>
 
             <section className="mb-8">
-              <h3 className="mb-3 text-sm font-semibold text-ink-soft">Erledigt pro Bereich</h3>
-              <BarChart data={areaData} />
+              <div className="mb-3 flex items-baseline justify-between">
+                <h3 className="text-sm font-semibold text-ink-soft">Erledigt pro Bereich</h3>
+                {onFilterArea && (
+                  <span className="text-xs text-ink-soft">tippen zum Filtern</span>
+                )}
+              </div>
+              <BarChart
+                data={areaData}
+                onSelect={onFilterArea ? (d) => onFilterArea(d.id) : undefined}
+              />
             </section>
 
             <section className="mb-8">
@@ -67,8 +107,15 @@ export default function StatsView({ tasks, onClose }) {
               <BarChart data={stats.byTimeOfDay} />
             </section>
 
+            <section className="mb-8">
+              <h3 className="mb-3 text-sm font-semibold text-ink-soft">Nach Wochentag</h3>
+              <BarChart data={stats.byWeekday} orientation="vertical" />
+            </section>
+
             <section>
-              <h3 className="mb-3 text-sm font-semibold text-ink-soft">Trend (letzte 6 Wochen)</h3>
+              <h3 className="mb-3 text-sm font-semibold text-ink-soft">
+                Trend ({stats.weeks} Wochen)
+              </h3>
               <BarChart data={stats.weeklyTrend} orientation="vertical" />
             </section>
           </>

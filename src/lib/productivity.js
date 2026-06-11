@@ -1,6 +1,7 @@
 // Mustererkennung für die Statistik-Ansicht: aggregiert erledigte Tasks
 // (mit `completed_at`) zu Bereichs-, Tageszeit- und Wochentag-Verteilungen
-// sowie einem Wochentrend über die letzten `weeks` Wochen.
+// sowie einem Wochentrend. Alle Auswertungen beziehen sich auf das gewählte
+// Zeitfenster der letzten `weeks` Wochen.
 
 import { startOfWeek } from './date.js'
 
@@ -22,7 +23,15 @@ const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Fr
 const WEEKDAY_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 
 export function productivityStats(tasks, weeks = 6) {
-  const completed = tasks.filter((t) => t.done && t.completed_at)
+  // Fenster-Start: Montag der Woche vor `weeks` Wochen.
+  const today = new Date()
+  const windowStart = startOfWeek(
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() - (weeks - 1) * 7),
+  )
+
+  const completed = tasks.filter(
+    (t) => t.done && t.completed_at && new Date(t.completed_at) >= windowStart,
+  )
 
   const byArea = { study: 0, work: 0, private: 0 }
   const byTimeOfDay = TIME_BUCKETS.map((b) => ({ id: b.id, label: b.label, value: 0 }))
@@ -37,7 +46,6 @@ export function productivityStats(tasks, weeks = 6) {
 
   // Wochentrend: Anzahl Erledigungen je Woche, älteste zuerst.
   const weeklyTrend = []
-  const today = new Date()
   for (let i = weeks - 1; i >= 0; i--) {
     const start = startOfWeek(
       new Date(today.getFullYear(), today.getMonth(), today.getDate() - i * 7),
@@ -59,6 +67,8 @@ export function productivityStats(tasks, weeks = 6) {
 
   return {
     total: completed.length,
+    weeks,
+    avgPerWeek: Math.round((completed.length / weeks) * 10) / 10,
     byArea,
     byTimeOfDay,
     byWeekday,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, X, Sparkles, PartyPopper, SearchX } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import TaskGroup from './TaskGroup.jsx'
@@ -19,9 +19,17 @@ export default function TaskList({
   onEdit,
   onDelete,
   searchInputRef,
+  focusArea,
 }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('all')
+
+  // Von außen gesetzter Bereichsfilter (z.B. Klick in der Statistik). Wir
+  // übernehmen ihn als Startwert in den lokalen Filter; danach bleibt die
+  // Auswahl wieder beim Nutzer.
+  useEffect(() => {
+    if (focusArea?.area) setAreaFilter(focusArea.area)
+  }, [focusArea])
 
   // Wie viele offene Tasks sind überfällig? Steuert den "Überfällig"-Chip.
   const overdueCount = tasks.filter(

@@ -123,9 +123,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Tastatur-Shortcuts**: `n` neue Task, `/` Suche fokussieren, `f`
   Fokus-Modus — greifen nicht, während du in einem Eingabefeld tippst.
 - **Statistik**: ein Knopf im Header (Balkendiagramm-Icon) öffnet eine
-  Vollbild-Übersicht deiner erledigten Tasks — Gesamtzahl, aktuelle Serie,
-  Verteilung nach Bereich und Tageszeit, sowie ein Wochentrend der letzten
-  6 Wochen. Zeigt einen Hinweis, solange noch nichts erledigt wurde.
+  Vollbild-Übersicht deiner erledigten Tasks — Gesamtzahl, Ø pro Woche,
+  aktuelle Serie, Verteilung nach Bereich, Tageszeit und Wochentag sowie ein
+  Wochentrend. Über einen Umschalter wählst du den Zeitraum (4/12/26 Wochen);
+  ein Tipp auf einen Bereichsbalken filtert direkt die Task-Liste danach.
+  Zeigt einen Hinweis, solange noch nichts erledigt wurde.
 
 ## Tasks speichern mit Supabase (optional)
 

@@ -61,6 +61,9 @@ export default function TodayView({ session }) {
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  // Bereichs-Sprung aus der Statistik in die Liste ({ area, key }); key sorgt
+  // dafür, dass auch wiederholte Klicks auf denselben Bereich greifen.
+  const [areaJump, setAreaJump] = useState(null)
   const searchInputRef = useRef(null)
 
   // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
@@ -216,6 +219,7 @@ export default function TodayView({ session }) {
         onEdit={openEdit}
         onDelete={removeTask}
         searchInputRef={searchInputRef}
+        focusArea={areaJump}
       />
 
       <AddTaskButton onClick={openCreate} />
@@ -247,7 +251,16 @@ export default function TodayView({ session }) {
 
       {onboarding.open && <Onboarding onClose={onboarding.dismiss} />}
 
-      {statsOpen && <StatsView tasks={tasks} onClose={() => setStatsOpen(false)} />}
+      {statsOpen && (
+        <StatsView
+          tasks={tasks}
+          onClose={() => setStatsOpen(false)}
+          onFilterArea={(area) => {
+            setAreaJump({ area, key: Date.now() })
+            setStatsOpen(false)
+          }}
+        />
+      )}
     </main>
   )
 }
