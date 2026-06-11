@@ -6,11 +6,14 @@ import {
   Trash2,
   ExternalLink,
   ChevronDown,
+  ChevronRight,
   ListTodo,
   ArrowUpRight,
+  Sparkles,
 } from 'lucide-react'
 import KanbanBoard from './KanbanBoard.jsx'
 import TaskModal from './TaskModal.jsx'
+import { useCoach } from '../lib/useCoach.js'
 import { formatGrade } from '../lib/grades.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 
@@ -47,6 +50,7 @@ export default function CourseDetail({
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [taskPick, setTaskPick] = useState(null)
+  const coach = useCoach()
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -57,6 +61,11 @@ export default function CourseDetail({
       document.body.style.overflow = ''
     }
   }, [onClose])
+
+  // Beim Kurswechsel die KI-Empfehlung zurücksetzen.
+  useEffect(() => {
+    coach.reset()
+  }, [course.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const courseTasks = useMemo(
     () => tasks.filter((t) => t.course_id === course.id),
@@ -154,6 +163,14 @@ export default function CourseDetail({
 
         {tab === 'inhalt' && (
           <>
+            <CoachSection
+              coach={coach}
+              onGenerate={() => coach.generate(course, tasks)}
+              onOpenStep={(id) => {
+                const t = tasks.find((x) => x.id === id)
+                if (t) openEditTask(t)
+              }}
+            />
             <LinksSection course={course} onUpdateCourse={onUpdateCourse} />
             <LecturesSection course={course} onUpdateCourse={onUpdateCourse} />
           </>
@@ -244,6 +261,92 @@ function EmptyHint({ icon: Icon, text }) {
       <Icon size={18} />
       <p>{text}</p>
     </div>
+  )
+}
+
+// KI-Studiencoach: empfiehlt per Knopfdruck die effizienteste Lernmethode für
+// diesen Kurs und eine priorisierte Schrittliste. Aufruf nur auf Wunsch
+// (schont das kostenlose Groq-Kontingent); ohne Server-Funktion (lokal/ohne
+// Key) erscheint ein freundlicher Hinweis.
+function CoachSection({ coach, onGenerate, onOpenStep }) {
+  const { advice, status, error } = coach
+  return (
+    <section className="mb-8 rounded-2xl border border-line bg-surface p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          <Sparkles size={16} className="text-ink-soft" />
+          KI-Studiencoach
+        </h3>
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={status === 'loading'}
+          className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-canvas transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {status === 'loading'
+            ? 'Denkt nach …'
+            : status === 'ready'
+              ? 'Neu fragen'
+              : 'KI-Empfehlung'}
+        </button>
+      </div>
+
+      {status === 'idle' && (
+        <p className="mt-2 text-sm text-ink-soft">
+          Lass dir vorschlagen, wie du in diesem Kurs am effizientesten lernst und
+          was als Nächstes dran ist.
+        </p>
+      )}
+
+      {status === 'error' && (
+        <p className="mt-2 rounded-xl bg-danger-bg px-3 py-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+
+      {status === 'ready' && advice && (
+        <div className="mt-3">
+          {advice.method && (
+            <p className="text-sm font-medium">{advice.method}</p>
+          )}
+          {advice.rationale && (
+            <p className="mt-0.5 text-sm text-ink-soft">{advice.rationale}</p>
+          )}
+          {advice.steps?.length > 0 && (
+            <ol className="mt-3 space-y-1.5">
+              {advice.steps.map((s, i) => {
+                const clickable = Boolean(s.id)
+                return (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => clickable && onOpenStep(s.id)}
+                      disabled={!clickable}
+                      className={`flex w-full items-start gap-2 rounded-xl px-2 py-2 text-left text-sm ${
+                        clickable ? 'transition-colors hover:bg-canvas' : 'cursor-default'
+                      }`}
+                    >
+                      <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-canvas text-xs font-semibold text-ink-soft">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium">{s.title}</span>
+                        {s.reason && (
+                          <span className="block text-xs text-ink-soft">{s.reason}</span>
+                        )}
+                      </span>
+                      {clickable && (
+                        <ChevronRight size={15} className="mt-0.5 shrink-0 text-ink-soft" />
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          )}
+        </div>
+      )}
+    </section>
   )
 }
 

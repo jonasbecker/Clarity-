@@ -152,6 +152,12 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Desktop ziehst du Karten per Drag & Drop zwischen den Spalten, auf dem
   Smartphone verschieben kleine Pfeil-Knöpfe. „Fertig" hakt die Aufgabe ab; per
   „+ Aufgabe" legst du direkt eine neue Aufgabe im Kurs an.
+- **KI-Studiencoach**: auf der Fach-Detailseite schlägt dir die KI per Knopf
+  („KI-Empfehlung") die für genau diesen Kurs effizienteste Lernmethode vor (z.B.
+  „Programmieraufgaben selbst lösen" vs. „Active Recall + Altklausuren") und eine
+  priorisierte Liste der nächsten Schritte — Schritte mit Bezug zu einer Aufgabe
+  öffnen diese direkt. Läuft über dieselbe Server-Funktion/denselben Groq-Key wie
+  der KI-Tagesplan (nur auf der veröffentlichten Seite; ohne Key ein Hinweis).
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.
