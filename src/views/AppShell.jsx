@@ -1,10 +1,17 @@
 import { useState } from 'react'
-import { Archive as ArchiveIcon, CalendarDays, GraduationCap, Timer } from 'lucide-react'
+import {
+  Archive as ArchiveIcon,
+  BookText,
+  CalendarDays,
+  GraduationCap,
+  Timer,
+} from 'lucide-react'
 import NavBar from '../components/NavBar.jsx'
 import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
 import LearningEnv from './LearningEnv.jsx'
 import Archive from './Archive.jsx'
+import Papers from './Papers.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import StatsView from '../components/StatsView.jsx'
@@ -70,6 +77,7 @@ export default function AppShell({ session }) {
     { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
     { id: 'env', label: 'Lernen', icon: Timer },
+    { id: 'papers', label: 'Hausarbeiten', icon: BookText },
     { id: 'archive', label: 'Archiv', icon: ArchiveIcon },
   ]
 
@@ -134,6 +142,10 @@ export default function AppShell({ session }) {
           courses={coursesApi.courses}
           onOpenCourse={openCourse}
           onEndSemester={endSemester}
+          chores={choresApi.chores}
+          onAddChore={choresApi.addChore}
+          onToggleChore={(id, done) => choresApi.editChore(id, { done })}
+          onRemoveChore={choresApi.removeChore}
         />
       )}
 
@@ -166,6 +178,16 @@ export default function AppShell({ session }) {
           courses={coursesApi.courses}
           tasks={tasksApi.tasks}
           onOpenCourse={openCourse}
+        />
+      )}
+
+      {view === 'papers' && (
+        <Papers
+          papers={papersApi.papers}
+          courses={coursesApi.courses}
+          onAdd={papersApi.addPaper}
+          onEdit={papersApi.editPaper}
+          onRemove={papersApi.removePaper}
         />
       )}
 

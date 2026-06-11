@@ -168,6 +168,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   **Archiv**. Archivierte Kurse verschwinden aus Hub und Notenspiegel, bleiben im
   Bereich „Archiv" aber mitsamt Notizen und Aufgaben abrufbar und lassen sich
   jederzeit reaktivieren.
+- **Allgemeine To-Dos**: eine schlanke, studiumsfremde Checkliste im Studium-Hub
+  (Mensakarte aufladen usw.) — anlegen, abhaken, löschen.
+- **Hausarbeiten-Manager**: im Bereich „Hausarbeiten" sammelst du Recherche-
+  Quellen für Haus-/Abschlussarbeiten (Titel, Autor:in/Uni, URL, Kurs-Zuordnung)
+  und schaltest jede zwischen „zu lesen" und „gelesen" um.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.
@@ -269,4 +274,4 @@ läuft (nicht im Browser).
 | 5 ✅  | KI-Tagesplan / Auto-Scheduler (Tasks automatisch in den Kalender einplanen) |
 | 6 ✅  | Onboarding, Statistik/Mustererkennung |
 | 7 ✅  | Studium: Kurse/Module, Klausuren mit Lernfortschritt, Notenspiegel (ECTS), Studium-Dashboard |
-| 8 🚧  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |
+| 8 ✅  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |

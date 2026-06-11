@@ -1,4 +1,5 @@
 import { Award, CalendarClock, GraduationCap, Layers, ChevronRight } from 'lucide-react'
+import ChoreList from '../components/ChoreList.jsx'
 import { getGreeting, formatLongDate, formatDueLabel } from '../lib/date.js'
 import { upcomingExams } from '../lib/exams.js'
 import {
@@ -23,7 +24,17 @@ function countdown(days) {
 // funktioniert in Demo und mit Supabase. Archivierte Kurse bleiben außen vor.
 //
 // `onOpenCourse(id)` öffnet einen Kurs (ab Phase 2 die Fach-Detailseite).
-export default function StudyHub({ name, tasks, courses, onOpenCourse, onEndSemester }) {
+export default function StudyHub({
+  name,
+  tasks,
+  courses,
+  onOpenCourse,
+  onEndSemester,
+  chores,
+  onAddChore,
+  onToggleChore,
+  onRemoveChore,
+}) {
   const active = courses.filter((c) => !c.archived)
   const exams = upcomingExams(tasks, active)
   const avg = weightedAverage(active)
@@ -202,6 +213,16 @@ export default function StudyHub({ name, tasks, courses, onOpenCourse, onEndSeme
           )}
         </>
       )}
+
+      {/* Allgemeine To-Dos — unabhängig vom Studium, immer sichtbar */}
+      <div className="mt-8">
+        <ChoreList
+          chores={chores}
+          onAdd={onAddChore}
+          onToggle={onToggleChore}
+          onRemove={onRemoveChore}
+        />
+      </div>
     </main>
   )
 }
