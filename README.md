@@ -142,6 +142,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   gefilterten Aufgabenliste) und der **Notenspiegel** (ECTS-gewichteter Schnitt je
   Semester). Über die obere Navigation wechselst du zwischen **Studium** und
   **Heute** (Tagesplan/Fokus); archivierte Kurse bleiben außen vor.
+- **Fach-Detailseite**: ein Tipp auf eine Kurs-Kachel öffnet die Detailseite mit
+  Eckdaten, **wichtigen Links** (Moodle/Skript — hinzufügen/öffnen) und
+  **Vorlesungsnotizen** als Akkordeon (reiner Text). Tabs trennen Inhalt,
+  kursbezogene **Aufgaben** und **Termine**. Notizen/Links liegen am Kurs (mit
+  Supabase im Konto, sonst lokal).
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

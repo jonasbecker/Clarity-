@@ -3,6 +3,8 @@ import { CalendarDays, GraduationCap } from 'lucide-react'
 import NavBar from '../components/NavBar.jsx'
 import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
+import CourseDetail from '../components/CourseDetail.jsx'
+import CourseModal from '../components/CourseModal.jsx'
 import StatsView from '../components/StatsView.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import OfflineBanner from '../components/OfflineBanner.jsx'
@@ -42,11 +44,18 @@ export default function AppShell({ session }) {
 
   const [view, setView] = useState('hub')
   const [statsOpen, setStatsOpen] = useState(false)
+  // Geöffnete Fach-Detailseite (Kurs-id) bzw. Kurs im Bearbeiten-Formular.
+  const [detailCourseId, setDetailCourseId] = useState(null)
+  const [editingCourse, setEditingCourse] = useState(null)
   // Sprünge in die „Heute"-Liste: Bereichs-Filter (aus der Statistik) bzw.
   // Kurs-Filter (aus dem Hub). `key` sorgt dafür, dass auch wiederholte
   // Klicks denselben Filter erneut auslösen.
   const [areaJump, setAreaJump] = useState(null)
   const [courseJump, setCourseJump] = useState(null)
+
+  const detailCourse = detailCourseId
+    ? coursesApi.courses.find((c) => c.id === detailCourseId) ?? null
+    : null
 
   // App-Icon-Badge: was heute noch offen oder überfällig ist.
   const todayISO = toISODate(new Date())
@@ -60,9 +69,24 @@ export default function AppShell({ session }) {
     { id: 'today', label: 'Heute', icon: CalendarDays },
   ]
 
+  // Hub-Kachel öffnet die Fach-Detailseite.
   function openCourse(id) {
+    setDetailCourseId(id)
+  }
+  // Aus der Detailseite in die gefilterte „Heute"-Liste springen.
+  function openCourseInToday(id) {
+    setDetailCourseId(null)
     setCourseJump({ id, key: Date.now() })
     setView('today')
+  }
+  // Kurs löschen: Detail schließen und die Zuordnung betroffener Tasks lösen
+  // (in Supabase erledigt das die DB serverseitig, in der Demo nicht).
+  function handleCourseDelete(id) {
+    coursesApi.removeCourse(id)
+    setDetailCourseId((cur) => (cur === id ? null : cur))
+    tasksApi.tasks
+      .filter((t) => t.course_id === id)
+      .forEach((t) => tasksApi.editTask(t.id, { course_id: null }))
   }
 
   return (
@@ -113,6 +137,29 @@ export default function AppShell({ session }) {
           removeCourse={coursesApi.removeCourse}
           focusArea={areaJump}
           focusCourse={courseJump}
+        />
+      )}
+
+      {detailCourse && (
+        <CourseDetail
+          course={detailCourse}
+          tasks={tasksApi.tasks}
+          onClose={() => setDetailCourseId(null)}
+          onEditMeta={(course) => setEditingCourse(course)}
+          onUpdateCourse={coursesApi.editCourse}
+          onToggleTask={tasksApi.toggleTask}
+          onDeleteTask={tasksApi.removeTask}
+          onOpenInToday={openCourseInToday}
+        />
+      )}
+
+      {editingCourse && (
+        <CourseModal
+          open
+          course={editingCourse}
+          onClose={() => setEditingCourse(null)}
+          onSubmit={(fields) => coursesApi.editCourse(editingCourse.id, fields)}
+          onDelete={handleCourseDelete}
         />
       )}
 
