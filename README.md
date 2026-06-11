@@ -120,6 +120,9 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Tags**: frei wählbare Schlagwörter quer zu den drei Bereichen (z.B.
   „#Seminararbeit", „#dringend"). Im Formular hinzufügen, auf der Karte als
   kleine Chips sichtbar; über eine Tag-Leiste oder die Suche danach filtern.
+- **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
+  in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
+  Bereich wie gewohnt im Formular ändern.
 - **Checklisten (Subtasks)**: einer Task im Formular Teilschritte hinzufügen;
   in der Liste erscheint der Fortschritt als „2/4".
 - **Überfällig**: gibt es überfällige offene Tasks, erscheint ein Filter-Chip

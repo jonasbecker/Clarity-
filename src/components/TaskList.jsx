@@ -19,12 +19,14 @@ export default function TaskList({
   onToggle,
   onEdit,
   onDelete,
+  onMoveArea,
   searchInputRef,
   focusArea,
 }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('all')
   const [tagFilter, setTagFilter] = useState(null) // aktiver Tag oder null
+  const [draggingId, setDraggingId] = useState(null) // gerade gezogene Task
 
   // Von außen gesetzter Bereichsfilter (z.B. Klick in der Statistik). Wir
   // übernehmen ihn als Startwert in den lokalen Filter; danach bleibt die
@@ -194,6 +196,12 @@ export default function TaskList({
                           onToggle={onToggle}
                           onEdit={onEdit}
                           onDelete={onDelete}
+                          // Verschieben nur, wenn alle drei Spalten sichtbar sind.
+                          onMoveArea={areaFilter === 'all' ? onMoveArea : undefined}
+                          onDragStart={areaFilter === 'all' ? setDraggingId : undefined}
+                          onDragEnd={() => setDraggingId(null)}
+                          draggingId={draggingId}
+                          dragging={draggingId != null}
                         />
                       ))}
                     </div>

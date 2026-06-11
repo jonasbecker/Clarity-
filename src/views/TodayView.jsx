@@ -218,6 +218,10 @@ export default function TodayView({ session }) {
         onToggle={toggleTask}
         onEdit={openEdit}
         onDelete={removeTask}
+        onMoveArea={(id, area) => {
+          const t = tasks.find((x) => x.id === id)
+          if (t && t.area !== area) editTask(id, { area })
+        }}
         searchInputRef={searchInputRef}
         focusArea={areaJump}
       />

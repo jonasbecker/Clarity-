@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Repeat, Trash2, Flag, ListChecks } from 'lucide-react'
+import { Check, Repeat, Trash2, Flag, ListChecks, GripVertical } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 import { subtaskProgress } from '../lib/subtasks.js'
@@ -7,7 +7,18 @@ import { repeatLabel } from '../lib/repeat.js'
 
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
-export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
+//
+// Per Drag & Drop (Desktop) lässt sich die Karte am Griff in eine andere
+// Bereichs-Spalte ziehen; `onDragStart`/`onDragEnd`/`dragging` steuern das.
+export default function TaskCard({
+  task,
+  onToggle,
+  onEdit,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+  dragging,
+}) {
   const area = areas[task.area]
   // Beim Abhaken erst kurz die Animation zeigen, dann erst in der echten
   // Liste ändern — sonst verschwindet die Karte, bevor man den "Pop" sieht.
@@ -29,12 +40,34 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
     }
   }
 
+  const draggable = Boolean(onDragStart)
+
   return (
     <div
+      draggable={draggable}
+      onDragStart={
+        draggable
+          ? (e) => {
+              e.dataTransfer.setData('text/plain', task.id)
+              e.dataTransfer.effectAllowed = 'move'
+              onDragStart(task.id)
+            }
+          : undefined
+      }
+      onDragEnd={draggable ? () => onDragEnd?.() : undefined}
       className={`group flex animate-task-in items-center gap-3 py-2.5 ${
         overdue ? 'border-l-2 border-danger pl-2' : ''
-      }`}
+      } ${dragging ? 'opacity-40' : ''}`}
     >
+      {draggable && (
+        <span
+          className="hidden shrink-0 cursor-grab self-start pt-1 text-ink-soft opacity-0 transition-opacity active:cursor-grabbing group-hover:opacity-100 sm:block"
+          aria-hidden="true"
+          title="Zum Verschieben ziehen"
+        >
+          <GripVertical size={14} />
+        </span>
+      )}
       <button
         type="button"
         onClick={handleToggle}
