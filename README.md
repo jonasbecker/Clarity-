@@ -244,6 +244,12 @@ verbinden"**. Beim ersten Mal zeigt Google evtl. „App nicht verifiziert" →
 > Nur **Lesezugriff** (`calendar.readonly`). Im Test-Modus gilt die Verbindung
 > etwa eine Stunde, danach einfach erneut verbinden.
 
+> **Hinweis für eigenes Hosting:** `vercel.json` setzt den Header
+> `Cross-Origin-Opener-Policy: same-origin-allow-popups`. Ohne ihn verliert das
+> Anmeldefenster von Google die Verbindung zur App und öffnet/schließt sich
+> dadurch wiederholt von selbst. Bei einem anderen Hoster diesen Header
+> entsprechend mitgeben.
+
 ## KI-Priorisierung mit Groq (optional)
 
 „Dein Fokus heute" sortiert standardmäßig nach Dringlichkeit. Mit einem
