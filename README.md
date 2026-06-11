@@ -126,6 +126,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Tags**: frei wählbare Schlagwörter quer zu den drei Bereichen (z.B.
   „#Seminararbeit", „#dringend"). Im Formular hinzufügen, auf der Karte als
   kleine Chips sichtbar; über eine Tag-Leiste oder die Suche danach filtern.
+- **Kurse/Module (Studium)**: Tasks im Bereich Studium lassen sich einem Kurs
+  zuordnen (Name, Farbe, Semester, ECTS, Note). Im Task-Formular wählst du den
+  Kurs aus oder legst per „+" direkt einen neuen an; auf der Karte erscheint ein
+  farbiger Kurs-Chip, und über eine Kurs-Leiste filterst du die Liste danach.
+  Kurse liegen mit Supabase im Konto, sonst lokal im Browser.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

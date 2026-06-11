@@ -5,6 +5,7 @@ import DayPlan from '../components/DayPlan.jsx'
 import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
+import CourseModal from '../components/CourseModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
 import StatsView from '../components/StatsView.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
@@ -24,6 +25,7 @@ import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
+import { useCourses } from '../lib/useCourses.js'
 import { useOnboarding } from '../lib/useOnboarding.js'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
 import { useOnline } from '../lib/useOnline.js'
@@ -62,6 +64,7 @@ export default function TodayView({ session }) {
   const planPrefs = usePlanPrefs()
   const planOrder = usePlanOrder()
   const { templates, addTemplate, removeTemplate } = useTemplates(session)
+  const { courses, addCourse, editCourse, removeCourse } = useCourses(session)
   const onboarding = useOnboarding()
 
   // Modal-Zustand: `editing` null = neu, sonst die zu bearbeitende Task.
@@ -69,6 +72,13 @@ export default function TodayView({ session }) {
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
+  // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
+  // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
+  const [courseModalOpen, setCourseModalOpen] = useState(false)
+  const [editingCourse, setEditingCourse] = useState(null)
+  const [courseFromTask, setCourseFromTask] = useState(false)
+  const [coursePick, setCoursePick] = useState(null)
   // Bereichs-Sprung aus der Statistik in die Liste ({ area, key }); key sorgt
   // dafür, dass auch wiederholte Klicks auf denselben Bereich greifen.
   const [areaJump, setAreaJump] = useState(null)
@@ -108,7 +118,10 @@ export default function TodayView({ session }) {
   useAppBadge(badgeCount)
 
   // Pull-to-Refresh (nur sinnvoll mit offenen Overlays aus → enabled).
-  const pull = usePullToRefresh(refresh, !modalOpen && !focusOpen && !statsOpen)
+  const pull = usePullToRefresh(
+    refresh,
+    !modalOpen && !focusOpen && !statsOpen && !courseModalOpen,
+  )
 
   const eventsByDate =
     calendar.status === 'connected'
@@ -171,6 +184,33 @@ export default function TodayView({ session }) {
       repeat: template.repeat ?? null,
       due_date: todayISO,
     })
+  }
+
+  // Kurs-Formular öffnen: `course` null = neu. `fromTask` markiert, dass es
+  // aus dem Task-Formular kommt (neuen Kurs danach dort vorauswählen).
+  function openCourseModal(course, fromTask = false) {
+    setEditingCourse(course)
+    setCourseFromTask(fromTask)
+    setCourseModalOpen(true)
+  }
+  // Kurs speichern (neu oder bearbeiten).
+  async function handleCourseSubmit(fields) {
+    if (editingCourse) {
+      editCourse(editingCourse.id, fields)
+    } else {
+      const created = await addCourse(fields)
+      if (created && courseFromTask) {
+        setCoursePick({ id: created.id, key: Date.now() })
+      }
+    }
+  }
+  // Kurs löschen: zusätzlich die Zuordnung betroffener Tasks lösen, damit die
+  // Ansicht sofort stimmt (in Supabase erledigt das die DB serverseitig).
+  function handleCourseDelete(id) {
+    removeCourse(id)
+    tasks
+      .filter((t) => t.course_id === id)
+      .forEach((t) => editTask(t.id, { course_id: null }))
   }
 
   return (
@@ -252,6 +292,7 @@ export default function TodayView({ session }) {
         }}
         searchInputRef={searchInputRef}
         focusArea={areaJump}
+        courses={courses}
       />
 
       <AddTaskButton onClick={openCreate} />
@@ -263,6 +304,17 @@ export default function TodayView({ session }) {
         onSubmit={handleSubmit}
         onDelete={removeTask}
         onSaveTemplate={addTemplate}
+        courses={courses}
+        onManageCourse={(course) => openCourseModal(course, true)}
+        preselectCourse={coursePick}
+      />
+
+      <CourseModal
+        open={courseModalOpen}
+        course={editingCourse}
+        onClose={() => setCourseModalOpen(false)}
+        onSubmit={handleCourseSubmit}
+        onDelete={handleCourseDelete}
       />
 
       {focusOpen && (

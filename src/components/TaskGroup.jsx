@@ -19,6 +19,7 @@ export default function TaskGroup({
   onDragEnd,
   draggingId,
   dragging,
+  courseById,
 }) {
   const area = areas[areaId]
   const [over, setOver] = useState(false)
@@ -76,6 +77,7 @@ export default function TaskGroup({
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               dragging={draggingId === task.id}
+              courseById={courseById}
             />
           ))}
         </div>

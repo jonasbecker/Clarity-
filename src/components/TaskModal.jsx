@@ -39,10 +39,14 @@ export default function TaskModal({
   onDelete,
   onSaveTemplate,
   task,
+  courses = [],
+  onManageCourse,
+  preselectCourse,
 }) {
   const isEdit = Boolean(task)
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('study')
+  const [courseId, setCourseId] = useState(null) // zugeordneter Kurs (nur Studium)
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // siehe lib/repeat.js
@@ -63,6 +67,7 @@ export default function TaskModal({
     if (!open) return
     setTitle(task?.title ?? '')
     setArea(task?.area ?? 'study')
+    setCourseId(task?.course_id ?? null)
     setDueDate(task?.due_date ?? null)
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
@@ -75,6 +80,12 @@ export default function TaskModal({
     setNewTag('')
     setSaveAsTemplate(false)
   }, [open, task])
+
+  // Wurde gerade aus diesem Formular heraus ein neuer Kurs angelegt, ihn
+  // direkt auswählen (preselectCourse trägt id + key, damit es erneut greift).
+  useEffect(() => {
+    if (preselectCourse?.id) setCourseId(preselectCourse.id)
+  }, [preselectCourse])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
   useEffect(() => {
@@ -112,6 +123,8 @@ export default function TaskModal({
     onSubmit({
       title: trimmed,
       area,
+      // Kurszuordnung nur im Studium — sonst immer null (Doppelabsicherung).
+      course_id: area === 'study' ? courseId : null,
       due_date: dueDate,
       description: description.trim() || null,
       repeat,
@@ -272,7 +285,12 @@ export default function TaskModal({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => setArea(a.id)}
+                  onClick={() => {
+                    setArea(a.id)
+                    // Kurs/Klausur sind reine Studium-Konzepte — beim Wechsel
+                    // weg von Studium die Kurszuordnung lösen.
+                    if (a.id !== 'study') setCourseId(null)
+                  }}
                   className="rounded-xl border-2 py-2 text-sm font-medium transition-colors"
                   style={{
                     borderColor: active ? a.color : 'var(--color-line)',
@@ -285,6 +303,39 @@ export default function TaskModal({
               )
             })}
           </div>
+
+          {/* Kurs (nur im Studium) — optionale Zuordnung zu einem Modul */}
+          {area === 'study' && (
+            <>
+              <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+                Kurs <span className="font-normal">(optional)</span>
+              </p>
+              <div className="flex gap-2">
+                <select
+                  value={courseId ?? ''}
+                  onChange={(e) => setCourseId(e.target.value || null)}
+                  className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+                >
+                  <option value="">Kein Kurs</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {onManageCourse && (
+                  <button
+                    type="button"
+                    onClick={() => onManageCourse(null)}
+                    aria-label="Neuen Kurs anlegen"
+                    className="grid size-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+                  >
+                    <Plus size={18} />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Dauer (für den Tagesplan) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">

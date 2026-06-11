@@ -19,8 +19,12 @@ export default function TaskCard({
   onDragStart,
   onDragEnd,
   dragging,
+  courseById,
 }) {
   const area = areas[task.area]
+  // Zugeordneter Kurs (nur Studium). Fehlt der Kurs (z.B. gelöscht), einfach
+  // keinen Chip zeigen — kein Absturz.
+  const course = task.course_id ? courseById?.get(task.course_id) : null
   // Beim Abhaken erst kurz die Animation zeigen, dann erst in der echten
   // Liste ändern — sonst verschwindet die Karte, bevor man den "Pop" sieht.
   const [pending, setPending] = useState(false)
@@ -118,6 +122,16 @@ export default function TaskCard({
             {task.description && (
               <span className="line-clamp-1 min-w-0">{task.description}</span>
             )}
+          </span>
+        )}
+        {course && (
+          <span className="mt-1 flex items-center gap-1 text-[10px] leading-none text-ink-soft">
+            <span
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: course.color || 'var(--color-area-study)' }}
+              aria-hidden="true"
+            />
+            {course.name}
           </span>
         )}
         {tags.length > 0 && (

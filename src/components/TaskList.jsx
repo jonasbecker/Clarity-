@@ -22,11 +22,17 @@ export default function TaskList({
   onMoveArea,
   searchInputRef,
   focusArea,
+  courses = [],
+  focusCourse,
 }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('all')
   const [tagFilter, setTagFilter] = useState(null) // aktiver Tag oder null
+  const [courseFilter, setCourseFilter] = useState(null) // aktiver Kurs oder null
   const [draggingId, setDraggingId] = useState(null) // gerade gezogene Task
+
+  // Kurse als Map (id → Kurs) für schnelle Anzeige in den Karten.
+  const courseById = new Map(courses.map((c) => [c.id, c]))
 
   // Von außen gesetzter Bereichsfilter (z.B. Klick in der Statistik). Wir
   // übernehmen ihn als Startwert in den lokalen Filter; danach bleibt die
@@ -35,12 +41,34 @@ export default function TaskList({
     if (focusArea?.area) setAreaFilter(focusArea.area)
   }, [focusArea])
 
+  // Von außen gesetzter Kurs-Filter (z.B. Klick im Studium-Dashboard).
+  useEffect(() => {
+    if (focusCourse?.id) {
+      setAreaFilter('study')
+      setCourseFilter(focusCourse.id)
+    }
+  }, [focusCourse])
+
   // Alle vorkommenden Tags für die Filter-Leiste.
   const tags = allTags(tasks)
   // Verschwindet der aktive Tag (z.B. letzte Task gelöscht), Filter lösen.
   useEffect(() => {
     if (tagFilter && !tags.includes(tagFilter)) setTagFilter(null)
   }, [tags, tagFilter])
+
+  // Kurse, die in den aktuellen Tasks vorkommen — nur die zeigen wir als
+  // Filter-Chips (analog zu den Tags).
+  const usedCourseIds = new Set(tasks.map((t) => t.course_id).filter(Boolean))
+  const courseChips = courses.filter((c) => usedCourseIds.has(c.id))
+  // Kurs-Filter nur im Studium/„Alle" sinnvoll; sonst (und bei verschwundenem
+  // Kurs) lösen.
+  const courseFilterUsable = areaFilter === 'all' || areaFilter === 'study'
+  useEffect(() => {
+    if (courseFilter && (!courseFilterUsable || !usedCourseIds.has(courseFilter))) {
+      setCourseFilter(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseFilter, courseFilterUsable, tasks])
 
   // Wie viele offene Tasks sind überfällig? Steuert den "Überfällig"-Chip.
   const overdueCount = tasks.filter(
@@ -52,7 +80,11 @@ export default function TaskList({
       ? [...AREA_FILTERS, { id: 'overdue', label: `Überfällig (${overdueCount})` }]
       : AREA_FILTERS
 
-  const hasFilters = query.trim() !== '' || areaFilter !== 'all' || tagFilter != null
+  const hasFilters =
+    query.trim() !== '' ||
+    areaFilter !== 'all' ||
+    tagFilter != null ||
+    courseFilter != null
   const q = query.trim().toLowerCase()
   const filtered = tasks.filter((t) => {
     if (areaFilter === 'overdue') {
@@ -61,6 +93,7 @@ export default function TaskList({
       return false
     }
     if (tagFilter && !(t.tags || []).includes(tagFilter)) return false
+    if (courseFilter && t.course_id !== courseFilter) return false
     if (
       q &&
       !t.title.toLowerCase().includes(q) &&
@@ -170,6 +203,34 @@ export default function TaskList({
                 })}
               </div>
             )}
+
+            {/* Kurs-Filter: nur im Studium/„Alle" und wenn Kurse vorkommen. */}
+            {courseFilterUsable && courseChips.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {courseChips.map((c) => {
+                  const active = courseFilter === c.id
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCourseFilter(active ? null : c.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        active
+                          ? 'border-ink bg-ink text-canvas'
+                          : 'border-line text-ink-soft hover:border-ink/30'
+                      }`}
+                    >
+                      <span
+                        className="size-2 rounded-full"
+                        style={{ backgroundColor: c.color || 'var(--color-area-study)' }}
+                        aria-hidden="true"
+                      />
+                      {c.name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {filtered.length === 0 ? (
@@ -202,6 +263,7 @@ export default function TaskList({
                           onDragEnd={() => setDraggingId(null)}
                           draggingId={draggingId}
                           dragging={draggingId != null}
+                          courseById={courseById}
                         />
                       ))}
                     </div>
