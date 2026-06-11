@@ -5,10 +5,11 @@ import { supabase } from './supabase.js'
 // Datenbank. Die UI greift über den useCourses-Hook zu und weiß nichts davon.
 //
 // Spalten der Tabelle "courses":
-//   id, user_id, name, color, semester, ects, grade, inserted_at
+//   id, user_id, name, color, semester, ects, grade, links, lectures,
+//   archived, inserted_at
 
 const TABLE = 'courses'
-const COLS = 'id, name, color, semester, ects, grade'
+const COLS = 'id, name, color, semester, ects, grade, links, lectures, archived'
 
 // Alle Kurse des eingeloggten Nutzers, älteste zuerst (stabile Reihenfolge).
 export async function fetchCourses() {

@@ -23,10 +23,60 @@ export const user = {
 // Kurse/Module fürs Studium (Demo). `grade` ist die deutsche Note (1.0–5.0)
 // oder null, solange der Kurs noch nicht benotet ist; `ects` die Leistungs-
 // punkte. Tasks im Bereich Studium können auf eine dieser ids zeigen.
+// `links` sind wichtige Kurs-Links (Moodle/Skript), `lectures` die
+// Vorlesungsnotizen (Akkordeon), `archived` markiert abgeschlossene Semester.
 export const courses = [
-  { id: 'c1', name: 'Statistik II', color: 'var(--color-area-study)', semester: 'WS25/26', ects: 6, grade: 2.3 },
-  { id: 'c2', name: 'Datenbanken', color: '#0ea5e9', semester: 'WS25/26', ects: 5, grade: null },
-  { id: 'c3', name: 'Mikroökonomie', color: '#f59e0b', semester: 'SS25', ects: 6, grade: 1.7 },
+  {
+    id: 'c1',
+    name: 'Statistik II',
+    color: 'var(--color-area-study)',
+    semester: 'WS25/26',
+    ects: 6,
+    grade: 2.3,
+    archived: false,
+    links: [
+      { label: 'Moodle-Kursraum', url: 'https://moodle.example.org/statistik2' },
+      { label: 'Skript (PDF)', url: 'https://example.org/statistik2-skript.pdf' },
+    ],
+    lectures: [
+      { id: 'l1a', title: 'Vorlesung 1 – Wahrscheinlichkeit', body: 'Grundbegriffe: Ereignis, Wahrscheinlichkeit, Laplace. Wichtig: Additionssatz und bedingte Wahrscheinlichkeit.' },
+      { id: 'l1b', title: 'Vorlesung 2 – Verteilungen', body: 'Binomial- und Normalverteilung. Erwartungswert und Varianz.' },
+    ],
+  },
+  {
+    id: 'c2',
+    name: 'Datenbanken',
+    color: '#0ea5e9',
+    semester: 'WS25/26',
+    ects: 5,
+    grade: null,
+    archived: false,
+    links: [{ label: 'Übungsblätter', url: 'https://example.org/db-uebungen' }],
+    lectures: [],
+  },
+  {
+    id: 'c3',
+    name: 'Mikroökonomie',
+    color: '#f59e0b',
+    semester: 'SS25',
+    ects: 6,
+    grade: 1.7,
+    archived: true,
+    links: [],
+    lectures: [],
+  },
+]
+
+// Hausarbeiten-Manager: Beispiel-Recherchequellen.
+export const papers = [
+  { id: 'p1', title: 'Bayessche Statistik in der Praxis', author: 'Müller, TU München', course_id: 'c1', url: 'https://example.org/bayes', status: 'to_read' },
+  { id: 'p2', title: 'Normalisierung relationaler Datenbanken', author: 'Codd', course_id: 'c2', url: 'https://example.org/normalisierung', status: 'read' },
+]
+
+// Allgemeine To-Dos: studiumsfremde Checkliste.
+export const chores = [
+  { id: 'ch1', title: 'Mensakarte aufladen', done: false },
+  { id: 'ch2', title: 'Semesterticket verlängern', done: false },
 ]
 
 // Kalender-Termine für die Timeline. `start`/`end` sind 24h-Zeiten als
@@ -43,7 +93,7 @@ export const timeline = [
 // `due_date` ist ein echtes Datum ('YYYY-MM-DD') oder null; isoInDays setzt
 // die Beispiele relativ zu heute, damit die Demo immer aktuell aussieht.
 export const openTasks = [
-  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', course_id: 'c1', due_date: isoInDays(4), description: null, duration_min: 60, priority: 'medium', tags: ['Seminararbeit'], subtasks: [
+  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', course_id: 'c1', status: 'doing', due_date: isoInDays(4), description: null, duration_min: 60, priority: 'medium', tags: ['Seminararbeit'], subtasks: [
     { id: 's1a', title: 'Suchbegriffe festlegen', done: true },
     { id: 's1b', title: 'Datenbanken durchsuchen', done: false },
     { id: 's1c', title: 'Quellen in Zotero sammeln', done: false },

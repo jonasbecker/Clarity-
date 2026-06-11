@@ -144,3 +144,71 @@ alter table public.tasks add column if not exists kind text default 'task';
 alter table public.tasks drop constraint if exists tasks_kind_check;
 alter table public.tasks add constraint tasks_kind_check
   check (kind in ('task', 'exam'));
+
+-- Kanban-Status der Lernaufgaben. `done` bleibt die Quelle der Wahrheit für
+-- "erledigt"; `status` unterscheidet die offenen Tasks zusätzlich in
+-- "Nicht angefangen" (todo) und "In Arbeit" (doing). Fertige Tasks (done=true)
+-- führen wir als 'done'.
+alter table public.tasks add column if not exists status text default 'todo';
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks add constraint tasks_status_check
+  check (status in ('todo', 'doing', 'done'));
+
+-- ----------------------------------------------------------------------
+-- Studium-Hub: zusätzliche Felder am Kurs.
+--   links    = Array { label, url } für Moodle/Skript/Kursraum
+--   lectures = Array { id, title, body } für Vorlesungsnotizen (Akkordeon)
+--   archived = ob der Kurs ins Archiv verschoben wurde ("Semester abschließen")
+alter table public.courses add column if not exists links jsonb not null default '[]';
+alter table public.courses add column if not exists lectures jsonb not null default '[]';
+alter table public.courses add column if not exists archived boolean not null default false;
+
+-- ----------------------------------------------------------------------
+-- Hausarbeiten-Manager: Recherche-Quellen für Haus-/Abschlussarbeiten.
+-- Optional einem Kurs zugeordnet (beim Löschen des Kurses auf null gesetzt).
+create table if not exists public.papers (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade
+              default auth.uid(),
+  title       text not null,
+  author      text,          -- Autor:in oder Universität
+  course_id   uuid references public.courses (id) on delete set null,
+  url         text,
+  status      text default 'to_read', -- 'to_read' (zu lesen) | 'read' (gelesen)
+  inserted_at timestamptz not null default now()
+);
+
+alter table public.papers drop constraint if exists papers_status_check;
+alter table public.papers add constraint papers_status_check
+  check (status in ('to_read', 'read'));
+
+alter table public.papers enable row level security;
+
+drop policy if exists "Nutzer verwalten ihre eigenen Quellen" on public.papers;
+create policy "Nutzer verwalten ihre eigenen Quellen"
+  on public.papers
+  for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ----------------------------------------------------------------------
+-- Allgemeine To-Dos: schlanke, studiumsfremde Checkliste (Mensakarte etc.).
+create table if not exists public.chores (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade
+              default auth.uid(),
+  title       text not null,
+  done        boolean not null default false,
+  inserted_at timestamptz not null default now()
+);
+
+alter table public.chores enable row level security;
+
+drop policy if exists "Nutzer verwalten ihre eigenen To-Dos" on public.chores;
+create policy "Nutzer verwalten ihre eigenen To-Dos"
+  on public.chores
+  for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

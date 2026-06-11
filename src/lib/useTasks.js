@@ -39,6 +39,7 @@ export function useTasks(session) {
           tags: [],
           kind: 'task',
           course_id: null,
+          status: 'todo',
           ...t,
           done: false,
         })),
@@ -80,7 +81,7 @@ export function useTasks(session) {
   async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
-        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, ...fields },
+        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, status: 'todo', ...fields },
         ...prev,
       ])
       return
@@ -155,6 +156,24 @@ export function useTasks(session) {
     }
   }
 
+  // Kanban: Task in eine Spalte verschieben ('todo' | 'doing' | 'done').
+  // `done` bleibt die Quelle der Wahrheit fürs Erledigt-Sein und wird hier
+  // mitgeführt (inkl. completed_at für den Wochenrückblick), damit Scheduler
+  // und Statistik unverändert weiterlaufen.
+  function moveStatus(id, status) {
+    const target = tasks.find((t) => t.id === id)
+    if (!target) return
+    const done = status === 'done'
+    const changes = {
+      status,
+      done,
+      completed_at: done
+        ? target.completed_at ?? new Date().toISOString()
+        : null,
+    }
+    editTask(id, changes)
+  }
+
   // Löscht erst nur visuell — die Task wirklich aus der DB zu entfernen
   // passiert verzögert in `finalizeDelete`, damit `undoDelete` sie in der
   // Zwischenzeit zurückholen kann.
@@ -206,6 +225,7 @@ export function useTasks(session) {
     addTask,
     editTask,
     toggleTask,
+    moveStatus,
     removeTask,
     pendingDelete,
     undoDelete,
