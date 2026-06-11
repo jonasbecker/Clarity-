@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { CalendarDays, GraduationCap, Timer } from 'lucide-react'
+import { Archive as ArchiveIcon, CalendarDays, GraduationCap, Timer } from 'lucide-react'
 import NavBar from '../components/NavBar.jsx'
 import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
 import LearningEnv from './LearningEnv.jsx'
+import Archive from './Archive.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import StatsView from '../components/StatsView.jsx'
@@ -69,7 +70,20 @@ export default function AppShell({ session }) {
     { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
     { id: 'env', label: 'Lernen', icon: Timer },
+    { id: 'archive', label: 'Archiv', icon: ArchiveIcon },
   ]
+
+  // „Semester abschließen": alle aktuell aktiven Kurse ins Archiv verschieben.
+  function endSemester() {
+    const active = coursesApi.courses.filter((c) => !c.archived)
+    if (active.length === 0) return
+    const ok = window.confirm(
+      `${active.length} Kurs${active.length === 1 ? '' : 'e'} ins Archiv verschieben? ` +
+        'Notizen und Aufgaben bleiben erhalten und sind im Archiv weiter abrufbar.',
+    )
+    if (!ok) return
+    active.forEach((c) => coursesApi.editCourse(c.id, { archived: true }))
+  }
 
   // Hub-Kachel öffnet die Fach-Detailseite.
   function openCourse(id) {
@@ -119,6 +133,7 @@ export default function AppShell({ session }) {
           tasks={tasksApi.tasks}
           courses={coursesApi.courses}
           onOpenCourse={openCourse}
+          onEndSemester={endSemester}
         />
       )}
 
@@ -144,6 +159,14 @@ export default function AppShell({ session }) {
 
       {view === 'env' && (
         <LearningEnv tasks={tasksApi.tasks} onToggle={tasksApi.toggleTask} />
+      )}
+
+      {view === 'archive' && (
+        <Archive
+          courses={coursesApi.courses}
+          tasks={tasksApi.tasks}
+          onOpenCourse={openCourse}
+        />
       )}
 
       {detailCourse && (

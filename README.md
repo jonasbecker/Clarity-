@@ -163,6 +163,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   **Hintergrundklängen** (Regen/Rauschen/Wind), die live per Web Audio API erzeugt
   werden — keine Audiodateien, garantiert kostenlos. Darunter erscheinen nur die
   heute fälligen/überfälligen Lernaufgaben.
+- **Archiv & Semester abschließen**: über „Semester abschließen" im Studium-Hub
+  (oder den Archivieren-Knopf auf der Fach-Detailseite) wandern Kurse ins
+  **Archiv**. Archivierte Kurse verschwinden aus Hub und Notenspiegel, bleiben im
+  Bereich „Archiv" aber mitsamt Notizen und Aufgaben abrufbar und lassen sich
+  jederzeit reaktivieren.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

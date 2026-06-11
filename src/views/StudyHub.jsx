@@ -23,7 +23,7 @@ function countdown(days) {
 // funktioniert in Demo und mit Supabase. Archivierte Kurse bleiben außen vor.
 //
 // `onOpenCourse(id)` öffnet einen Kurs (ab Phase 2 die Fach-Detailseite).
-export default function StudyHub({ name, tasks, courses, onOpenCourse }) {
+export default function StudyHub({ name, tasks, courses, onOpenCourse, onEndSemester }) {
   const active = courses.filter((c) => !c.archived)
   const exams = upcomingExams(tasks, active)
   const avg = weightedAverage(active)
@@ -127,7 +127,16 @@ export default function StudyHub({ name, tasks, courses, onOpenCourse }) {
           {/* Kurs-Galerie */}
           {active.length > 0 && (
             <section className="mb-8">
-              <h2 className="mb-3 text-sm font-semibold text-ink-soft">Deine Kurse</h2>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold text-ink-soft">Deine Kurse</h2>
+                <button
+                  type="button"
+                  onClick={onEndSemester}
+                  className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+                >
+                  Semester abschließen
+                </button>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {active.map((c) => {
                   const open = openByCourse.get(c.id) || 0
