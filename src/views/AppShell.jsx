@@ -144,11 +144,15 @@ export default function AppShell({ session }) {
         <CourseDetail
           course={detailCourse}
           tasks={tasksApi.tasks}
+          courses={coursesApi.courses}
           onClose={() => setDetailCourseId(null)}
           onEditMeta={(course) => setEditingCourse(course)}
           onUpdateCourse={coursesApi.editCourse}
+          onAddTask={tasksApi.addTask}
+          onEditTask={tasksApi.editTask}
           onToggleTask={tasksApi.toggleTask}
           onDeleteTask={tasksApi.removeTask}
+          onMoveStatus={tasksApi.moveStatus}
           onOpenInToday={openCourseInToday}
         />
       )}

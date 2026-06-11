@@ -147,6 +147,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   **Vorlesungsnotizen** als Akkordeon (reiner Text). Tabs trennen Inhalt,
   kursbezogene **Aufgaben** und **Termine**. Notizen/Links liegen am Kurs (mit
   Supabase im Konto, sonst lokal).
+- **Lernaufgaben-Kanban**: im Aufgaben-Tab eines Kurses landen die Aufgaben in
+  einem Board mit den Spalten **Nicht angefangen / In Arbeit / Fertig**. Am
+  Desktop ziehst du Karten per Drag & Drop zwischen den Spalten, auf dem
+  Smartphone verschieben kleine Pfeil-Knöpfe. „Fertig" hakt die Aufgabe ab; per
+  „+ Aufgabe" legst du direkt eine neue Aufgabe im Kurs an.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

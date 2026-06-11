@@ -9,7 +9,8 @@ import {
   ListTodo,
   ArrowUpRight,
 } from 'lucide-react'
-import TaskCard from './TaskCard.jsx'
+import KanbanBoard from './KanbanBoard.jsx'
+import TaskModal from './TaskModal.jsx'
 import { formatGrade } from '../lib/grades.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 
@@ -29,14 +30,23 @@ const TABS = [
 export default function CourseDetail({
   course,
   tasks,
+  courses,
   onClose,
   onEditMeta,
   onUpdateCourse,
+  onAddTask,
+  onEditTask,
   onToggleTask,
   onDeleteTask,
+  onMoveStatus,
   onOpenInToday,
 }) {
   const [tab, setTab] = useState('inhalt')
+  // Task-Formular innerhalb der Detailseite: `editingTask` null = neue Aufgabe
+  // (Kurs vorausgewählt). `taskPick` trägt id + key für die Vorauswahl.
+  const [taskModalOpen, setTaskModalOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [taskPick, setTaskPick] = useState(null)
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -58,6 +68,20 @@ export default function CourseDetail({
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
 
   const color = course.color || 'var(--color-area-study)'
+
+  function openNewTask() {
+    setEditingTask(null)
+    setTaskPick({ id: course.id, key: Date.now() })
+    setTaskModalOpen(true)
+  }
+  function openEditTask(task) {
+    setEditingTask(task)
+    setTaskModalOpen(true)
+  }
+  function handleTaskSubmit(fields) {
+    if (editingTask) onEditTask(editingTask.id, fields)
+    else onAddTask(fields)
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-canvas">
@@ -137,33 +161,35 @@ export default function CourseDetail({
 
         {tab === 'aufgaben' && (
           <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-ink-soft">
-                Aufgaben in diesem Kurs
-              </h3>
-              <button
-                type="button"
-                onClick={() => onOpenInToday(course.id)}
-                className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
-              >
-                In „Heute" öffnen <ArrowUpRight size={13} />
-              </button>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-ink-soft">Lernaufgaben</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenInToday(course.id)}
+                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+                >
+                  In „Heute" <ArrowUpRight size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={openNewTask}
+                  className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-canvas transition-opacity hover:opacity-90"
+                >
+                  <Plus size={13} /> Aufgabe
+                </button>
+              </div>
             </div>
-            {openTasks.length === 0 ? (
-              <EmptyHint icon={ListTodo} text="Keine offenen Aufgaben in diesem Kurs." />
+            {courseTasks.length === 0 ? (
+              <EmptyHint icon={ListTodo} text="Noch keine Aufgaben — leg deine erste an." />
             ) : (
-              <ul className="space-y-1">
-                {openTasks.map((t) => (
-                  <li key={t.id}>
-                    <TaskCard
-                      task={t}
-                      onToggle={onToggleTask}
-                      onEdit={() => onOpenInToday(course.id)}
-                      onDelete={onDeleteTask}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <KanbanBoard
+                tasks={courseTasks}
+                onToggle={onToggleTask}
+                onEdit={openEditTask}
+                onDelete={onDeleteTask}
+                onMoveStatus={onMoveStatus}
+              />
             )}
           </section>
         )}
@@ -198,6 +224,16 @@ export default function CourseDetail({
           </section>
         )}
       </div>
+
+      <TaskModal
+        open={taskModalOpen}
+        task={editingTask}
+        onClose={() => setTaskModalOpen(false)}
+        onSubmit={handleTaskSubmit}
+        onDelete={onDeleteTask}
+        courses={courses}
+        preselectCourse={taskPick}
+      />
     </div>
   )
 }
