@@ -75,6 +75,12 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   schiebst du eine Task weit nach oben, landet sie an einem früheren Tag.
   Mit verbundenem Google Kalender plant Clarity **jeden** Tag um die echten
   Termine herum (es lädt die nächsten 7 Tage), nicht nur heute.
+- **„Woche mit KI planen"**: in der Wochenansicht verteilt Groq deine offenen
+  Tasks proaktiv auf die kommenden Tage — berücksichtigt Fälligkeiten, die
+  freie Kapazität jedes Tages (Arbeitsfenster minus Termine) und gruppiert
+  ähnliche Bereiche, mit kurzer Begründung je Task und einem Wochenüberblick.
+  Das *Wann genau* rechnet weiterhin der deterministische Scheduler; fällt die
+  KI aus, bleibt die normale Verteilung stehen.
 - Mit verbundenem **Google Kalender** plant Clarity um deine echten Termine
   herum; ohne dienen Beispiel-Termine als Demo. Die Termine werden im
   Hintergrund automatisch aktualisiert (in Intervallen und beim Zurückkehren

@@ -18,6 +18,7 @@ import { useCollapsible } from '../lib/useCollapsible.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { isoInDays, formatDueLabel } from '../lib/date.js'
+import { buildAiWeek, freeMinutes } from '../lib/weekPlan.js'
 import {
   buildSchedule,
   buildWeek,
@@ -44,11 +45,13 @@ export default function DayPlan({
   onToggle,
   prefs,
   ai,
+  aiWeek,
   onOptimize,
   planOrder,
   dayCount = 5,
 }) {
   const aiLoading = ai.status === 'loading'
+  const aiWeekLoading = aiWeek?.status === 'loading'
   const [view, setView] = useState('today') // 'today' | 'week'
   const [draggedId, setDraggedId] = useState(null)
   const { open, toggle } = useCollapsible('dayplan', true)
@@ -80,6 +83,25 @@ export default function DayPlan({
 
   const now = new Date()
   const nowMin = now.getHours() * 60 + now.getMinutes()
+
+  // KI-Wochenplanung: Tag-Zuweisungen + Begründungen, wenn vorhanden.
+  const weekAssignments =
+    aiWeek?.status === 'ready' ? aiWeek.plan?.assignments ?? null : null
+  const weekSummary = aiWeek?.status === 'ready' ? aiWeek.plan?.summary : null
+  const reasonOf = new Map(
+    (weekAssignments ?? []).map((a) => [a.id, a.reason]).filter(([, r]) => r),
+  )
+
+  // KI um eine Wochen-Verteilung bitten: jeder Tag mit seiner freien Kapazität.
+  const planWeek = () => {
+    if (!aiWeek) return
+    const daysPayload = dayEvents.map((events, d) => ({
+      day: d,
+      label: formatDueLabel(isoInDays(d)) || 'Heute',
+      frei_min: freeMinutes(events, prefs.workStart, prefs.workEnd),
+    }))
+    aiWeek.generate({ tasks: ordered, days: daysPayload })
+  }
 
   if (loading) {
     return (
@@ -194,16 +216,51 @@ export default function DayPlan({
               handleDrop={handleDrop}
             />
           ) : (
-            <WeekPlan
-              ordered={ordered}
-              dayEvents={dayEvents}
-              prefs={prefs}
-              nowMin={nowMin}
-              seq={seq}
-              onToggle={onToggle}
-              onMove={move}
-              dayCount={dayCount}
-            />
+            <>
+              {/* KI-Wochenplanung: verteilt die Tasks proaktiv auf die Tage */}
+              {aiWeek && tasks.length > 0 && (
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    onClick={planWeek}
+                    disabled={aiWeekLoading}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium transition-colors hover:border-ink/30 disabled:opacity-50"
+                  >
+                    {aiWeekLoading ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={13} className="text-area-study" />
+                    )}
+                    {aiWeekLoading
+                      ? 'Plant Woche …'
+                      : weekAssignments
+                        ? 'Woche neu planen'
+                        : 'Woche mit KI planen'}
+                  </button>
+                  {weekSummary && (
+                    <p className="mt-2 rounded-xl bg-surface px-4 py-2.5 text-sm text-ink-soft">
+                      {weekSummary}
+                    </p>
+                  )}
+                  {aiWeek.error && (
+                    <p className="mt-2 text-sm text-danger">KI: {aiWeek.error}</p>
+                  )}
+                </div>
+              )}
+
+              <WeekPlan
+                ordered={ordered}
+                dayEvents={dayEvents}
+                prefs={prefs}
+                nowMin={nowMin}
+                seq={seq}
+                onToggle={onToggle}
+                onMove={move}
+                dayCount={dayCount}
+                assignments={weekAssignments}
+                reasonOf={reasonOf}
+              />
+            </>
           )}
 
           {/* Tipp: echten Kalender verbinden */}
@@ -332,15 +389,39 @@ function TodayPlan({
 }
 
 // --- Ansicht "Woche": Tasks über mehrere Tage verteilt ---
-function WeekPlan({ ordered, dayEvents, prefs, nowMin, seq, onToggle, onMove, dayCount }) {
-  const { days, unscheduled } = buildWeek({
-    tasks: ordered,
-    dayEvents,
-    workStart: prefs.workStart,
-    workEnd: prefs.workEnd,
-    dayCount,
-    now: nowMin,
-  })
+// Ohne KI-Zuweisungen verteilt buildWeek per Überlauf; mit Zuweisungen
+// bestimmt die KI den Tag (buildAiWeek), der Scheduler die Uhrzeit.
+function WeekPlan({
+  ordered,
+  dayEvents,
+  prefs,
+  nowMin,
+  seq,
+  onToggle,
+  onMove,
+  dayCount,
+  assignments,
+  reasonOf,
+}) {
+  const { days, unscheduled } =
+    assignments && assignments.length
+      ? buildAiWeek({
+          ordered,
+          dayEvents,
+          assignments,
+          workStart: prefs.workStart,
+          workEnd: prefs.workEnd,
+          dayCount,
+          now: nowMin,
+        })
+      : buildWeek({
+          tasks: ordered,
+          dayEvents,
+          workStart: prefs.workStart,
+          workEnd: prefs.workEnd,
+          dayCount,
+          now: nowMin,
+        })
 
   const anyPlanned = days.some((d) => d.blocks.length > 0)
 
@@ -360,6 +441,7 @@ function WeekPlan({ ordered, dayEvents, prefs, nowMin, seq, onToggle, onMove, da
               seq={seq}
               onToggle={onToggle}
               onMove={onMove}
+              reasonOf={reasonOf}
             />
           ))}
         </div>
@@ -373,7 +455,7 @@ function WeekPlan({ ordered, dayEvents, prefs, nowMin, seq, onToggle, onMove, da
 }
 
 // Eine Tages-Karte in der Wochenansicht: Datum + geplante Blöcke (kompakt).
-function DayCard({ day, seq, onToggle, onMove }) {
+function DayCard({ day, seq, onToggle, onMove, reasonOf }) {
   const label = formatDueLabel(isoInDays(day.offset)) || 'Heute'
   const total = day.blocks.reduce((s, b) => s + (b.end - b.start), 0)
 
@@ -420,6 +502,7 @@ function DayCard({ day, seq, onToggle, onMove }) {
                 seq={seq}
                 onToggle={onToggle}
                 onMove={onMove}
+                reason={reasonOf?.get(it.task.id)}
               />
             ),
           )}
@@ -430,7 +513,8 @@ function DayCard({ day, seq, onToggle, onMove }) {
 }
 
 // Kompakte Task-Zeile in der Wochenansicht (mit Hoch/Runter).
-function CompactTaskRow({ item, seq, onToggle, onMove }) {
+// `reason` (optional): kurze KI-Begründung für den gewählten Tag.
+function CompactTaskRow({ item, seq, onToggle, onMove, reason }) {
   const area = areas[item.task.area]
   const pos = seq.indexOf(item.task.id)
   const total = seq.length
@@ -453,7 +537,10 @@ function CompactTaskRow({ item, seq, onToggle, onMove }) {
           className="opacity-0 transition-opacity group-hover:opacity-100"
         />
       </button>
-      <span className="min-w-0 flex-1 truncate">{item.task.title}</span>
+      <span className="min-w-0 flex-1 truncate">
+        {item.task.title}
+        {reason && <span className="ml-1.5 text-xs text-ink-soft">· {reason}</span>}
+      </span>
       <span className="flex shrink-0 text-ink-soft">
         <button
           type="button"

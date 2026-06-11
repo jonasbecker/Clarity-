@@ -18,6 +18,7 @@ import PullToRefresh from '../components/PullToRefresh.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
+import { useAiWeek } from '../lib/useAiWeek.js'
 import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
@@ -55,6 +56,7 @@ export default function TodayView({ session }) {
   } = useTasks(session)
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
+  const aiWeek = useAiWeek()
   const { theme, toggle: toggleTheme } = useTheme()
   const notifications = useNotifications(tasks, loading)
   const planPrefs = usePlanPrefs()
@@ -221,6 +223,7 @@ export default function TodayView({ session }) {
         onToggle={toggleTask}
         prefs={planPrefs}
         ai={ai}
+        aiWeek={aiWeek}
         onOptimize={() =>
           ai.generate({ tasks: openTasks, events: todayEvents })
         }
