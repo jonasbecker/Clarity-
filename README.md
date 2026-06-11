@@ -87,9 +87,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Tipp legt daraus sofort eine Task für heute an (mit Bereich, Dauer und
   Wiederholung der Vorlage), das × entfernt die Vorlage wieder. Mit Supabase
   liegen Vorlagen im Konto (geräteübergreifend), sonst lokal im Browser.
-- **Wiederkehrende Tasks**: beim Anlegen/Bearbeiten "Täglich" oder
-  "Wöchentlich" wählen — nach dem Abhaken erscheint automatisch die nächste
-  Instanz mit passender Fälligkeit.
+- **Wiederkehrende Tasks**: beim Anlegen/Bearbeiten „Täglich", „Werktags",
+  „Wöchentlich", „Alle 2 Wochen" oder „Bestimmte Tage" (einzelne Wochentage
+  Mo–So) wählen — nach dem Abhaken erscheint automatisch die nächste Instanz
+  mit passender Fälligkeit. Priorität und Tags wandern mit, Checklisten-Haken
+  werden zurückgesetzt.
 - **Erinnerungen**: optionale Browser-Benachrichtigung beim Öffnen, wenn
   Tasks für heute fällig oder überfällig sind (höchstens einmal pro Tag).
 - **Wochenrückblick**: zeigt, wie viele Tasks die letzten 7 Tage erledigt

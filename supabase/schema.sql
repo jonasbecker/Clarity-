@@ -35,10 +35,15 @@ alter table public.tasks add column if not exists priority text default 'medium'
 alter table public.tasks add column if not exists subtasks jsonb not null default '[]';
 alter table public.tasks add column if not exists tags jsonb not null default '[]';
 
--- Nur erlaubte Werte für die Wiederholung.
+-- Erlaubte Werte für die Wiederholung: feste Voreinstellungen oder ein
+-- 'days:'-Muster für bestimmte Wochentage (z.B. 'days:1,3,5').
 alter table public.tasks drop constraint if exists tasks_repeat_check;
 alter table public.tasks add constraint tasks_repeat_check
-  check (repeat is null or repeat in ('daily', 'weekly'));
+  check (
+    repeat is null
+    or repeat in ('daily', 'weekdays', 'weekly', 'biweekly')
+    or repeat ~ '^days:[0-6](,[0-6])*$'
+  );
 
 -- Priorität: 'low', 'medium' oder 'high' (Standard 'medium').
 alter table public.tasks drop constraint if exists tasks_priority_check;
@@ -73,9 +78,18 @@ create table if not exists public.task_templates (
   area         text not null check (area in ('study', 'work', 'private')),
   duration_min int default 30,
   description  text,
-  repeat       text check (repeat is null or repeat in ('daily', 'weekly')),
+  repeat       text,
   inserted_at  timestamptz not null default now()
 );
+
+-- Wiederholung der Vorlage: gleiche erlaubte Werte wie bei den Tasks.
+alter table public.task_templates drop constraint if exists task_templates_repeat_check;
+alter table public.task_templates add constraint task_templates_repeat_check
+  check (
+    repeat is null
+    or repeat in ('daily', 'weekdays', 'weekly', 'biweekly')
+    or repeat ~ '^days:[0-6](,[0-6])*$'
+  );
 
 alter table public.task_templates enable row level security;
 

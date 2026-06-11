@@ -1,19 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured } from './supabase.js'
 import { fetchTasks, createTask, updateTask, deleteTask } from './tasks.js'
-import { isoInDays, addDaysToISO } from './date.js'
+import { nextDueDate } from './repeat.js'
 import { openTasks as demoTasks } from '../data/dummyData.js'
 
 // Wie lange nach dem Löschen Zeit zum Rückgängigmachen bleibt, bevor die
 // Task wirklich aus der Datenbank verschwindet.
 const UNDO_DELAY = 5000
-
-// Nächste Fälligkeit für eine wiederkehrende Task: ein Tag bzw. eine Woche
-// nach der bisherigen Fälligkeit — oder ab heute, falls keine gesetzt war.
-function nextDueDate(dueDate, repeat) {
-  const days = repeat === 'weekly' ? 7 : 1
-  return dueDate ? addDaysToISO(dueDate, days) : isoInDays(days)
-}
 
 // Eigener Hook (custom hook): bündelt die gesamte Task-Logik an einer
 // Stelle. Die TodayView ruft `useTasks()` auf und bekommt fertige Daten +
@@ -99,6 +92,7 @@ export function useTasks(session) {
     )
 
     // Wiederkehrende Task abgehakt → gleich die nächste Instanz anlegen.
+    // Priorität und Tags wandern mit; Checklisten-Haken werden zurückgesetzt.
     if (nextDone && target.repeat) {
       addTask({
         title: target.title,
@@ -106,6 +100,9 @@ export function useTasks(session) {
         description: target.description,
         due_date: nextDueDate(target.due_date, target.repeat),
         repeat: target.repeat,
+        priority: target.priority ?? 'medium',
+        tags: target.tags ?? [],
+        subtasks: (target.subtasks ?? []).map((s) => ({ ...s, done: false })),
       })
     }
 

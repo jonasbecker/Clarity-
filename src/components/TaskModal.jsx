@@ -5,14 +5,7 @@ import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
 import { addTag, removeTag } from '../lib/tags.js'
-
-// Wiederholung: beim Abhaken legt useTasks automatisch die nächste Instanz
-// mit passender Fälligkeit an (1 Tag bzw. 1 Woche weiter).
-const REPEATS = [
-  { id: null, label: 'Einmalig' },
-  { id: 'daily', label: 'Täglich' },
-  { id: 'weekly', label: 'Wöchentlich' },
-]
+import { REPEAT_PRESETS, WEEKDAYS, parseDays, buildDaysRepeat } from '../lib/repeat.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -52,7 +45,8 @@ export default function TaskModal({
   const [area, setArea] = useState('study')
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
-  const [repeat, setRepeat] = useState(null) // null | 'daily' | 'weekly'
+  const [repeat, setRepeat] = useState(null) // siehe lib/repeat.js
+  const [customDays, setCustomDays] = useState(false) // Wochentag-Auswahl offen?
   const [duration, setDuration] = useState(30) // geschätzte Dauer in Minuten
   const [priority, setPriority] = useState('medium') // 'low' | 'medium' | 'high'
   const [subtasks, setSubtasks] = useState([]) // [{ id, title, done }]
@@ -72,6 +66,7 @@ export default function TaskModal({
     setDueDate(task?.due_date ?? null)
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
+    setCustomDays(typeof task?.repeat === 'string' && task.repeat.startsWith('days:'))
     setDuration(task?.duration_min ?? 30)
     setPriority(task?.priority ?? 'medium')
     setSubtasks(Array.isArray(task?.subtasks) ? task.subtasks : [])
@@ -435,13 +430,16 @@ export default function TaskModal({
             Wiederholung
           </p>
           <div className="flex flex-wrap gap-2">
-            {REPEATS.map((r) => {
-              const active = repeat === r.id
+            {REPEAT_PRESETS.map((r) => {
+              const active = !customDays && repeat === r.id
               return (
                 <button
                   key={r.label}
                   type="button"
-                  onClick={() => setRepeat(r.id)}
+                  onClick={() => {
+                    setCustomDays(false)
+                    setRepeat(r.id)
+                  }}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                     active
                       ? 'border-ink bg-ink text-canvas'
@@ -452,7 +450,53 @@ export default function TaskModal({
                 </button>
               )
             })}
+            {/* "Bestimmte Tage" öffnet die Wochentag-Auswahl */}
+            <button
+              type="button"
+              onClick={() => {
+                setCustomDays(true)
+                if (!(typeof repeat === 'string' && repeat.startsWith('days:'))) {
+                  setRepeat(buildDaysRepeat([new Date().getDay()]))
+                }
+              }}
+              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                customDays
+                  ? 'border-ink bg-ink text-canvas'
+                  : 'border-line text-ink-soft hover:border-ink/30'
+              }`}
+            >
+              Bestimmte Tage
+            </button>
           </div>
+
+          {/* Wochentag-Auswahl (nur im "Bestimmte Tage"-Modus) */}
+          {customDays && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {WEEKDAYS.map((w) => {
+                const selected = parseDays(repeat).includes(w.n)
+                return (
+                  <button
+                    key={w.n}
+                    type="button"
+                    onClick={() => {
+                      const cur = parseDays(repeat)
+                      const next = selected
+                        ? cur.filter((n) => n !== w.n)
+                        : [...cur, w.n]
+                      setRepeat(buildDaysRepeat(next))
+                    }}
+                    className={`grid size-9 place-items-center rounded-full border text-xs font-medium transition-colors ${
+                      selected
+                        ? 'border-ink bg-ink text-canvas'
+                        : 'border-line text-ink-soft hover:border-ink/30'
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {/* Als Vorlage merken (nur beim Anlegen) */}
           {!isEdit && onSaveTemplate && (

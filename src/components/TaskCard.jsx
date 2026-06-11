@@ -3,6 +3,7 @@ import { Check, Repeat, Trash2, Flag, ListChecks } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 import { subtaskProgress } from '../lib/subtasks.js'
+import { repeatLabel } from '../lib/repeat.js'
 
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
@@ -101,11 +102,11 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
       {task.repeat && (
         <span
           className="shrink-0 self-start pt-0.5 text-ink-soft"
-          title={task.repeat === 'daily' ? 'Wiederholt sich täglich' : 'Wiederholt sich wöchentlich'}
+          title={`Wiederholt sich: ${repeatLabel(task.repeat)}`}
         >
           <Repeat size={13} aria-hidden="true" />
           <span className="sr-only">
-            Wiederholt sich {task.repeat === 'daily' ? 'täglich' : 'wöchentlich'}
+            Wiederholt sich: {repeatLabel(task.repeat)}
           </span>
         </span>
       )}
