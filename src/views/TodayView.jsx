@@ -8,6 +8,7 @@ import TaskModal from '../components/TaskModal.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
 import StatsView from '../components/StatsView.jsx'
+import StudyDashboard from '../components/StudyDashboard.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import ReminderBanner from '../components/ReminderBanner.jsx'
 import WeekReview from '../components/WeekReview.jsx'
@@ -72,6 +73,7 @@ export default function TodayView({ session }) {
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  const [studyOpen, setStudyOpen] = useState(false)
   // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
   // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
   // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
@@ -82,6 +84,8 @@ export default function TodayView({ session }) {
   // Bereichs-Sprung aus der Statistik in die Liste ({ area, key }); key sorgt
   // dafür, dass auch wiederholte Klicks auf denselben Bereich greifen.
   const [areaJump, setAreaJump] = useState(null)
+  // Kurs-Sprung aus dem Studium-Dashboard in die Liste ({ id, key }).
+  const [courseJump, setCourseJump] = useState(null)
   const searchInputRef = useRef(null)
 
   // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
@@ -120,7 +124,7 @@ export default function TodayView({ session }) {
   // Pull-to-Refresh (nur sinnvoll mit offenen Overlays aus → enabled).
   const pull = usePullToRefresh(
     refresh,
-    !modalOpen && !focusOpen && !statsOpen && !courseModalOpen,
+    !modalOpen && !focusOpen && !statsOpen && !studyOpen && !courseModalOpen,
   )
 
   const eventsByDate =
@@ -164,7 +168,7 @@ export default function TodayView({ session }) {
 
   // Tastatur-Shortcuts (nur wenn weder Modal noch Fokus/Statistik offen sind).
   useKeyboardShortcuts({
-    enabled: !modalOpen && !focusOpen && !statsOpen,
+    enabled: !modalOpen && !focusOpen && !statsOpen && !studyOpen,
     onNew: openCreate,
     onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
@@ -226,6 +230,7 @@ export default function TodayView({ session }) {
         theme={theme}
         onToggleTheme={toggleTheme}
         onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
+        onOpenStudy={() => setStudyOpen(true)}
         onOpenStats={() => setStatsOpen(true)}
         progress={loading ? null : todayProgress}
       />
@@ -293,6 +298,7 @@ export default function TodayView({ session }) {
         searchInputRef={searchInputRef}
         focusArea={areaJump}
         courses={courses}
+        focusCourse={courseJump}
       />
 
       <AddTaskButton onClick={openCreate} />
@@ -342,6 +348,19 @@ export default function TodayView({ session }) {
           onFilterArea={(area) => {
             setAreaJump({ area, key: Date.now() })
             setStatsOpen(false)
+          }}
+        />
+      )}
+
+      {studyOpen && (
+        <StudyDashboard
+          tasks={tasks}
+          courses={courses}
+          onClose={() => setStudyOpen(false)}
+          onEditCourse={(course) => openCourseModal(course, false)}
+          onFilterCourse={(id) => {
+            setCourseJump({ id, key: Date.now() })
+            setStudyOpen(false)
           }}
         />
       )}

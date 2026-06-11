@@ -1,13 +1,13 @@
-import { BarChart3, LogOut, Moon, Sun } from 'lucide-react'
+import { BarChart3, GraduationCap, LogOut, Moon, Sun } from 'lucide-react'
 import { getGreeting, formatLongDate } from '../lib/date.js'
 import ProgressRing from './ProgressRing.jsx'
 
 // Header: Begrüßung + Datum links, Aktionen rechts.
 // `theme`/`onToggleTheme` schalten Hell/Dunkel; `onSignOut` (optional)
 // zeigt den Abmelden-Knopf nur, wenn jemand eingeloggt ist.
-// `onOpenStats` (optional) öffnet die Statistik-Ansicht.
+// `onOpenStudy`/`onOpenStats` (optional) öffnen Studium- bzw. Statistik-Ansicht.
 // `progress` (optional) zeigt den Tagesfortschritt als kleinen Ring.
-export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenStats, progress }) {
+export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenStudy, onOpenStats, progress }) {
   return (
     <header className="mb-8 flex items-start justify-between gap-4">
       <div>
@@ -30,6 +30,17 @@ export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenSt
       </div>
 
       <div className="mt-1 flex shrink-0 items-center gap-1">
+        {onOpenStudy && (
+          <button
+            type="button"
+            onClick={onOpenStudy}
+            aria-label="Studium öffnen"
+            className="grid size-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface"
+          >
+            <GraduationCap size={18} />
+          </button>
+        )}
+
         {onOpenStats && (
           <button
             type="button"
