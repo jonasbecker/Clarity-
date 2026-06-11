@@ -13,6 +13,8 @@ import WeekReview from '../components/WeekReview.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import Toast from '../components/Toast.jsx'
 import Onboarding from '../components/Onboarding.jsx'
+import OfflineBanner from '../components/OfflineBanner.jsx'
+import PullToRefresh from '../components/PullToRefresh.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
@@ -23,11 +25,14 @@ import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
 import { useOnboarding } from '../lib/useOnboarding.js'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
+import { useOnline } from '../lib/useOnline.js'
+import { useAppBadge } from '../lib/useAppBadge.js'
+import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
 import { buildSchedule } from '../lib/scheduler.js'
 import { selectFocusTasks } from '../lib/focus.js'
 import { weekStats } from '../lib/stats.js'
-import { toISODate } from '../lib/date.js'
+import { toISODate, isOverdue } from '../lib/date.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user, timeline } from '../data/dummyData.js'
 
@@ -46,6 +51,7 @@ export default function TodayView({ session }) {
     removeTask,
     pendingDelete,
     undoDelete,
+    refresh,
   } = useTasks(session)
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
@@ -90,6 +96,17 @@ export default function TodayView({ session }) {
     done: todayTasks.filter((t) => t.done).length,
     total: todayTasks.length,
   }
+
+  // App-Icon-Badge + Offline-Hinweis. Badge zeigt, was heute noch offen oder
+  // überfällig ist — direkt am Homescreen-Icon.
+  const online = useOnline()
+  const badgeCount = openTasks.filter(
+    (t) => t.due_date === todayISO || isOverdue(t.due_date),
+  ).length
+  useAppBadge(badgeCount)
+
+  // Pull-to-Refresh (nur sinnvoll mit offenen Overlays aus → enabled).
+  const pull = usePullToRefresh(refresh, !modalOpen && !focusOpen && !statsOpen)
 
   const eventsByDate =
     calendar.status === 'connected'
@@ -156,6 +173,12 @@ export default function TodayView({ session }) {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 pb-28 pt-8 sm:px-8 sm:pt-12">
+      <PullToRefresh
+        distance={pull.distance}
+        refreshing={pull.refreshing}
+        active={pull.active}
+      />
+
       <Header
         name={user.name}
         theme={theme}
@@ -164,6 +187,8 @@ export default function TodayView({ session }) {
         onOpenStats={() => setStatsOpen(true)}
         progress={loading ? null : todayProgress}
       />
+
+      <OfflineBanner online={online} />
 
       {!isSupabaseConfigured && <DemoBanner />}
 

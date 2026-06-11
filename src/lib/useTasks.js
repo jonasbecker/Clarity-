@@ -62,6 +62,19 @@ export function useTasks(session) {
     }
   }, [session])
 
+  // Tasks neu vom Server holen (für Pull-to-Refresh). Im Demo-Modus gibt es
+  // nichts zu synchronisieren — wir lösen einfach kurz auf.
+  async function refresh() {
+    if (!isSupabaseConfigured || !session) return
+    try {
+      const data = await fetchTasks()
+      setTasks(data)
+      setError(null)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
@@ -194,5 +207,6 @@ export function useTasks(session) {
     removeTask,
     pendingDelete,
     undoDelete,
+    refresh,
   }
 }

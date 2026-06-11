@@ -42,6 +42,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Kein Scroll-Chaining: macht das eigene Pull-to-Refresh berechenbarer. */
+  overscroll-behavior-y: contain;
 }
 
 body {

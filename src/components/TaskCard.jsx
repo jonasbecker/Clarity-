@@ -4,6 +4,7 @@ import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 import { subtaskProgress } from '../lib/subtasks.js'
 import { repeatLabel } from '../lib/repeat.js'
+import { tap } from '../lib/haptics.js'
 
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
@@ -33,6 +34,7 @@ export default function TaskCard({
   function handleToggle() {
     if (pending) return
     if (!task.done) {
+      tap() // kurzes haptisches Feedback beim Abhaken
       setPending(true)
       setTimeout(() => onToggle(task.id), 220)
     } else {

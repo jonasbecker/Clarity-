@@ -123,6 +123,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.
+- **Mobile-Feinschliff**: Als installierte PWA zeigt das App-Icon ein Badge
+  mit der Anzahl heute fälliger/überfälliger Tasks; nach unten ziehen
+  aktualisiert die Liste (Pull-to-Refresh); beim Abhaken gibt es ein kurzes
+  haptisches Feedback (sofern unterstützt). Offline läuft die App weiter und
+  zeigt einen dezenten Hinweis.
 - **Checklisten (Subtasks)**: einer Task im Formular Teilschritte hinzufügen;
   in der Liste erscheint der Fortschritt als „2/4".
 - **Überfällig**: gibt es überfällige offene Tasks, erscheint ein Filter-Chip

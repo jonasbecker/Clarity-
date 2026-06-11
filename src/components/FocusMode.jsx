@@ -3,6 +3,7 @@ import { Check, X, ArrowRight } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel } from '../lib/date.js'
 import { toHHMM } from '../lib/scheduler.js'
+import { tap } from '../lib/haptics.js'
 
 // Fokus-Modus: eine Task groß, alles andere ausgeblendet.
 //
@@ -106,6 +107,7 @@ export default function FocusMode({ tasks, onToggle, onClose }) {
             <button
               type="button"
               onClick={() => {
+                tap() // kurzes haptisches Feedback
                 onToggle(task.id) // in der echten Liste als erledigt speichern
                 setIndex((i) => i + 1)
               }}
