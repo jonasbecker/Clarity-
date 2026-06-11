@@ -15,7 +15,7 @@ import { supabase } from './supabase.js'
 
 const TABLE = 'tasks'
 const COLS =
-  'id, title, area, due_date, description, repeat, duration_min, done, completed_at, priority, subtasks, tags'
+  'id, title, area, due_date, description, repeat, duration_min, done, completed_at, priority, subtasks, tags, course_id, kind'
 
 // Alle Tasks des eingeloggten Nutzers, neueste zuerst.
 export async function fetchTasks() {

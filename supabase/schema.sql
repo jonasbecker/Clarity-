@@ -100,3 +100,47 @@ create policy "Nutzer verwalten ihre eigenen Vorlagen"
   to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- ----------------------------------------------------------------------
+-- Studium: Kurse/Module. Eine Task kann optional zu einem Kurs gehören
+-- (nur im Bereich 'study' genutzt). Note/ECTS speisen den Notenspiegel.
+create table if not exists public.courses (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade
+              default auth.uid(),
+  name        text not null,
+  color       text,          -- Akzentfarbe (CSS-Variable oder Hex)
+  semester    text,          -- z.B. 'WS25/26'
+  ects        int,           -- Leistungspunkte (optional)
+  grade       numeric,       -- deutsche Note 1.0–5.0 oder null (noch offen)
+  inserted_at timestamptz not null default now()
+);
+
+-- Note im deutschen System (1.0 sehr gut … 5.0 nicht bestanden), optional.
+alter table public.courses drop constraint if exists courses_grade_check;
+alter table public.courses add constraint courses_grade_check
+  check (grade is null or (grade >= 1.0 and grade <= 5.0));
+
+-- ECTS plausibel begrenzen, optional.
+alter table public.courses drop constraint if exists courses_ects_check;
+alter table public.courses add constraint courses_ects_check
+  check (ects is null or (ects >= 0 and ects <= 300));
+
+alter table public.courses enable row level security;
+
+drop policy if exists "Nutzer verwalten ihre eigenen Kurse" on public.courses;
+create policy "Nutzer verwalten ihre eigenen Kurse"
+  on public.courses
+  for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Verknüpfung Task → Kurs (beim Löschen des Kurses auf null gesetzt, die
+-- Task bleibt erhalten) und der Task-Typ: normale Aufgabe oder Klausur.
+alter table public.tasks add column if not exists course_id uuid
+  references public.courses (id) on delete set null;
+alter table public.tasks add column if not exists kind text default 'task';
+alter table public.tasks drop constraint if exists tasks_kind_check;
+alter table public.tasks add constraint tasks_kind_check
+  check (kind in ('task', 'exam'));

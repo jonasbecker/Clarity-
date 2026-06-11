@@ -37,6 +37,8 @@ export function useTasks(session) {
           priority: 'medium',
           subtasks: [],
           tags: [],
+          kind: 'task',
+          course_id: null,
           ...t,
           done: false,
         })),
@@ -78,7 +80,7 @@ export function useTasks(session) {
   async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
-        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], ...fields },
+        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, ...fields },
         ...prev,
       ])
       return
