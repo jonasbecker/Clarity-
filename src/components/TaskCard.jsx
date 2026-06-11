@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Check, Repeat, Trash2, Flag, ListChecks, GripVertical } from 'lucide-react'
+import { Check, Repeat, Trash2, Flag, ListChecks, GripVertical, GraduationCap } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 import { subtaskProgress } from '../lib/subtasks.js'
+import { isExam } from '../lib/exams.js'
 import { repeatLabel } from '../lib/repeat.js'
 import { tap } from '../lib/haptics.js'
 
@@ -32,6 +33,7 @@ export default function TaskCard({
   const dueLabel = formatDueLabel(task.due_date)
   const overdue = !done && isOverdue(task.due_date)
   const highPriority = task.priority === 'high'
+  const exam = isExam(task)
   const steps = subtaskProgress(task.subtasks)
   const tags = Array.isArray(task.tags) ? task.tags : []
 
@@ -101,6 +103,15 @@ export default function TaskCard({
             done ? 'text-ink-soft line-through' : ''
           }`}
         >
+          {exam && (
+            <span
+              className="mr-1.5 inline-flex -translate-y-px items-center gap-1 rounded-full bg-canvas px-1.5 py-0.5 align-middle text-[10px] font-medium leading-none text-ink-soft"
+              title="Klausur"
+            >
+              <GraduationCap size={11} />
+              Klausur
+            </span>
+          )}
           {highPriority && (
             <Flag
               size={12}

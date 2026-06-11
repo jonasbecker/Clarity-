@@ -47,6 +47,7 @@ export default function TaskModal({
   const [title, setTitle] = useState('')
   const [area, setArea] = useState('study')
   const [courseId, setCourseId] = useState(null) // zugeordneter Kurs (nur Studium)
+  const [kind, setKind] = useState('task') // 'task' | 'exam' (nur Studium)
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // siehe lib/repeat.js
@@ -68,6 +69,7 @@ export default function TaskModal({
     setTitle(task?.title ?? '')
     setArea(task?.area ?? 'study')
     setCourseId(task?.course_id ?? null)
+    setKind(task?.kind === 'exam' ? 'exam' : 'task')
     setDueDate(task?.due_date ?? null)
     setDescription(task?.description ?? '')
     setRepeat(task?.repeat ?? null)
@@ -123,8 +125,9 @@ export default function TaskModal({
     onSubmit({
       title: trimmed,
       area,
-      // Kurszuordnung nur im Studium — sonst immer null (Doppelabsicherung).
+      // Kurs/Klausur nur im Studium — sonst neutral (Doppelabsicherung).
       course_id: area === 'study' ? courseId : null,
+      kind: area === 'study' ? kind : 'task',
       due_date: dueDate,
       description: description.trim() || null,
       repeat,
@@ -219,9 +222,10 @@ export default function TaskModal({
             className="mt-3 w-full resize-none rounded-xl border border-line bg-canvas px-4 py-3 text-sm outline-none transition-colors focus:border-ink/30"
           />
 
-          {/* Subtasks / Checkliste (optional) */}
+          {/* Subtasks / Checkliste (bei Klausuren: Lernthemen) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
-            Checkliste <span className="font-normal">(optional)</span>
+            {kind === 'exam' && area === 'study' ? 'Lernthemen' : 'Checkliste'}{' '}
+            <span className="font-normal">(optional)</span>
           </p>
           {subtasks.length > 0 && (
             <ul className="mb-2 space-y-1.5">
@@ -288,8 +292,11 @@ export default function TaskModal({
                   onClick={() => {
                     setArea(a.id)
                     // Kurs/Klausur sind reine Studium-Konzepte — beim Wechsel
-                    // weg von Studium die Kurszuordnung lösen.
-                    if (a.id !== 'study') setCourseId(null)
+                    // weg von Studium Zuordnung und Klausur-Typ zurücksetzen.
+                    if (a.id !== 'study') {
+                      setCourseId(null)
+                      setKind('task')
+                    }
                   }}
                   className="rounded-xl border-2 py-2 text-sm font-medium transition-colors"
                   style={{
@@ -333,6 +340,31 @@ export default function TaskModal({
                     <Plus size={18} />
                   </button>
                 )}
+              </div>
+
+              {/* Typ: normale Aufgabe oder Klausur (mit Lernthemen) */}
+              <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Typ</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'task', label: 'Aufgabe' },
+                  { id: 'exam', label: 'Klausur' },
+                ].map((k) => {
+                  const active = kind === k.id
+                  return (
+                    <button
+                      key={k.id}
+                      type="button"
+                      onClick={() => setKind(k.id)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                        active
+                          ? 'border-ink bg-ink text-canvas'
+                          : 'border-line text-ink-soft hover:border-ink/30'
+                      }`}
+                    >
+                      {k.label}
+                    </button>
+                  )
+                })}
               </div>
             </>
           )}
@@ -436,7 +468,13 @@ export default function TaskModal({
           {/* Fällig: Schnell-Chips + Kalender-Feld */}
           <div className="mb-2 mt-5 flex items-center justify-between">
             <p className="text-sm font-medium text-ink-soft">
-              Fällig <span className="font-normal">(optional)</span>
+              {kind === 'exam' && area === 'study' ? (
+                'Klausurdatum'
+              ) : (
+                <>
+                  Fällig <span className="font-normal">(optional)</span>
+                </>
+              )}
             </p>
             {dueDate && (
               <button

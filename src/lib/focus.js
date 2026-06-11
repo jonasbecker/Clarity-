@@ -1,4 +1,5 @@
 import { daysUntil } from './date.js'
+import { isExam, EXAM_LEAD_DAYS } from './exams.js'
 
 // Wählt die "Fokus heute"-Tasks aus deinen echten Tasks aus.
 //
@@ -8,9 +9,13 @@ import { daysUntil } from './date.js'
 // Vorschlag ersetzt; die UI bleibt gleich.
 
 // Kleiner = dringender. Ohne Datum ganz nach hinten.
+// Klausuren werden in den Tagen davor künstlich dringender (so wandert ihre
+// Vorbereitung rechtzeitig nach vorne), ohne den Scheduler selbst zu ändern.
 function urgency(task) {
   const d = daysUntil(task.due_date)
-  return d == null ? 99_999 : d
+  if (d == null) return 99_999
+  if (isExam(task)) return d - EXAM_LEAD_DAYS
+  return d
 }
 
 export function selectFocusTasks(tasks, limit = 3) {

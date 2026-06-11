@@ -131,6 +131,11 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Kurs aus oder legst per „+" direkt einen neuen an; auf der Karte erscheint ein
   farbiger Kurs-Chip, und über eine Kurs-Leiste filterst du die Liste danach.
   Kurse liegen mit Supabase im Konto, sonst lokal im Browser.
+- **Klausuren & Lernfortschritt**: eine Studium-Task lässt sich als „Klausur"
+  markieren — das Fälligkeitsfeld wird zum Klausurdatum, die Checkliste zu
+  „Lernthemen". Der Fortschritt der Lernthemen (z.B. „2/4") zeigt, wie weit die
+  Vorbereitung ist. Im Tagesplan rückt die Vorbereitung schon einige Tage vor
+  der Klausur nach vorne, statt erst am Klausurtag aufzutauchen.
 - **Drag & Drop**: Tasks lassen sich am Griff (erscheint beim Drüberfahren)
   in eine andere Bereichs-Spalte ziehen (Desktop). Auf dem Smartphone den
   Bereich wie gewohnt im Formular ändern.

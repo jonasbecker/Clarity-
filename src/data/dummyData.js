@@ -54,4 +54,9 @@ export const openTasks = [
   { id: 'o5', title: 'Reisekostenabrechnung einreichen', area: 'work', due_date: null, description: null, duration_min: 30, priority: 'medium', tags: [], subtasks: [] },
   { id: 'o6', title: 'Wäsche waschen', area: 'private', due_date: null, description: null, duration_min: 15, priority: 'low', tags: ['Haushalt'], subtasks: [] },
   { id: 'o7', title: 'Zahnarzttermin vereinbaren', area: 'private', due_date: isoInDays(3), description: null, duration_min: 15, priority: 'medium', tags: [], subtasks: [] },
+  { id: 'o8', title: 'Klausur Statistik II', area: 'study', kind: 'exam', course_id: 'c1', due_date: isoInDays(9), description: null, duration_min: 120, priority: 'high', tags: [], subtasks: [
+    { id: 's8a', title: 'Kapitel 1–3 wiederholen', done: true },
+    { id: 's8b', title: 'Altklausuren rechnen', done: false },
+    { id: 's8c', title: 'Formelsammlung erstellen', done: false },
+  ] },
 ]
