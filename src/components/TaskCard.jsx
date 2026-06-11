@@ -16,6 +16,7 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
   const overdue = !done && isOverdue(task.due_date)
   const highPriority = task.priority === 'high'
   const steps = subtaskProgress(task.subtasks)
+  const tags = Array.isArray(task.tags) ? task.tags : []
 
   function handleToggle() {
     if (pending) return
@@ -81,6 +82,18 @@ export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
             {task.description && (
               <span className="line-clamp-1 min-w-0">{task.description}</span>
             )}
+          </span>
+        )}
+        {tags.length > 0 && (
+          <span className="mt-1 flex flex-wrap gap-1">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="inline-block rounded-full bg-canvas px-1.5 py-0.5 text-[10px] leading-none text-ink-soft"
+              >
+                #{t}
+              </span>
+            ))}
           </span>
         )}
       </button>

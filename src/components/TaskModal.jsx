@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Mic, Trash2, X, Plus } from 'lucide-react'
+import { Mic, Trash2, X, Plus, Tag } from 'lucide-react'
 import { areas } from '../data/dummyData.js'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
+import { addTag, removeTag } from '../lib/tags.js'
 
 // Wiederholung: beim Abhaken legt useTasks automatisch die nächste Instanz
 // mit passender Fälligkeit an (1 Tag bzw. 1 Woche weiter).
@@ -56,6 +57,8 @@ export default function TaskModal({
   const [priority, setPriority] = useState('medium') // 'low' | 'medium' | 'high'
   const [subtasks, setSubtasks] = useState([]) // [{ id, title, done }]
   const [newSubtask, setNewSubtask] = useState('')
+  const [tags, setTags] = useState([]) // ["Uni", "dringend"]
+  const [newTag, setNewTag] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
@@ -73,6 +76,8 @@ export default function TaskModal({
     setPriority(task?.priority ?? 'medium')
     setSubtasks(Array.isArray(task?.subtasks) ? task.subtasks : [])
     setNewSubtask('')
+    setTags(Array.isArray(task?.tags) ? task.tags : [])
+    setNewTag('')
     setSaveAsTemplate(false)
   }, [open, task])
 
@@ -100,6 +105,12 @@ export default function TaskModal({
     setNewSubtask('')
   }
 
+  function handleAddTag() {
+    if (!newTag.trim()) return
+    setTags((cur) => addTag(cur, newTag))
+    setNewTag('')
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
@@ -112,6 +123,7 @@ export default function TaskModal({
       duration_min: duration,
       priority,
       subtasks,
+      tags,
     })
     // Beim Anlegen optional als Vorlage merken (ohne Fälligkeit).
     if (!isEdit && saveAsTemplate && onSaveTemplate) {
@@ -324,6 +336,55 @@ export default function TaskModal({
                 </button>
               )
             })}
+          </div>
+
+          {/* Tags / Schlagwörter (optional) */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Tags <span className="font-normal">(optional)</span>
+          </p>
+          {tags.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-xs text-ink-soft"
+                >
+                  <Tag size={11} />
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => setTags((cur) => removeTag(cur, t))}
+                    aria-label={`Tag ${t} entfernen`}
+                    className="transition-colors hover:text-danger"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddTag()
+                }
+              }}
+              placeholder="Tag hinzufügen …"
+              className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+            />
+            <button
+              type="button"
+              onClick={handleAddTag}
+              aria-label="Tag hinzufügen"
+              className="grid size-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+            >
+              <Plus size={18} />
+            </button>
           </div>
 
           {/* Fällig: Schnell-Chips + Kalender-Feld */}

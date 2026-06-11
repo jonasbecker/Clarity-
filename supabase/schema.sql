@@ -33,6 +33,7 @@ alter table public.tasks add column if not exists duration_min int default 30;
 alter table public.tasks add column if not exists completed_at timestamptz;
 alter table public.tasks add column if not exists priority text default 'medium';
 alter table public.tasks add column if not exists subtasks jsonb not null default '[]';
+alter table public.tasks add column if not exists tags jsonb not null default '[]';
 
 -- Nur erlaubte Werte für die Wiederholung.
 alter table public.tasks drop constraint if exists tasks_repeat_check;

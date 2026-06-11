@@ -115,6 +115,9 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   schlankere Seite.
 - **Priorität**: jede Task ist Niedrig/Mittel/Hoch — „Hoch" wird mit einer
   kleinen roten Flagge vor dem Titel hervorgehoben.
+- **Tags**: frei wählbare Schlagwörter quer zu den drei Bereichen (z.B.
+  „#Seminararbeit", „#dringend"). Im Formular hinzufügen, auf der Karte als
+  kleine Chips sichtbar; über eine Tag-Leiste oder die Suche danach filtern.
 - **Checklisten (Subtasks)**: einer Task im Formular Teilschritte hinzufügen;
   in der Liste erscheint der Fortschritt als „2/4".
 - **Überfällig**: gibt es überfällige offene Tasks, erscheint ein Filter-Chip

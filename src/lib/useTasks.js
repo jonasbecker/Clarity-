@@ -43,6 +43,7 @@ export function useTasks(session) {
         demoTasks.map((t) => ({
           priority: 'medium',
           subtasks: [],
+          tags: [],
           ...t,
           done: false,
         })),
@@ -71,7 +72,7 @@ export function useTasks(session) {
   async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
-        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], ...fields },
+        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], ...fields },
         ...prev,
       ])
       return

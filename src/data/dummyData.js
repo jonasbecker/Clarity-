@@ -34,15 +34,15 @@ export const timeline = [
 // `due_date` ist ein echtes Datum ('YYYY-MM-DD') oder null; isoInDays setzt
 // die Beispiele relativ zu heute, damit die Demo immer aktuell aussieht.
 export const openTasks = [
-  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', due_date: isoInDays(4), description: null, duration_min: 60, priority: 'medium', subtasks: [
+  { id: 'o1', title: 'Literatur für Seminararbeit recherchieren', area: 'study', due_date: isoInDays(4), description: null, duration_min: 60, priority: 'medium', tags: ['Seminararbeit'], subtasks: [
     { id: 's1a', title: 'Suchbegriffe festlegen', done: true },
     { id: 's1b', title: 'Datenbanken durchsuchen', done: false },
     { id: 's1c', title: 'Quellen in Zotero sammeln', done: false },
   ] },
-  { id: 'o2', title: 'Vorlesung Datenbanken nachbereiten', area: 'study', due_date: null, description: null, duration_min: 45, priority: 'low', subtasks: [] },
-  { id: 'o3', title: 'Klausuranmeldung prüfen', area: 'study', due_date: isoInDays(2), description: 'Im Campus-Portal anmelden', duration_min: 15, priority: 'high', subtasks: [] },
-  { id: 'o4', title: 'Code-Review für PR #213', area: 'work', due_date: isoInDays(0), description: null, duration_min: 45, priority: 'high', subtasks: [] },
-  { id: 'o5', title: 'Reisekostenabrechnung einreichen', area: 'work', due_date: null, description: null, duration_min: 30, priority: 'medium', subtasks: [] },
-  { id: 'o6', title: 'Wäsche waschen', area: 'private', due_date: null, description: null, duration_min: 15, priority: 'low', subtasks: [] },
-  { id: 'o7', title: 'Zahnarzttermin vereinbaren', area: 'private', due_date: isoInDays(3), description: null, duration_min: 15, priority: 'medium', subtasks: [] },
+  { id: 'o2', title: 'Vorlesung Datenbanken nachbereiten', area: 'study', due_date: null, description: null, duration_min: 45, priority: 'low', tags: [], subtasks: [] },
+  { id: 'o3', title: 'Klausuranmeldung prüfen', area: 'study', due_date: isoInDays(2), description: 'Im Campus-Portal anmelden', duration_min: 15, priority: 'high', tags: ['dringend'], subtasks: [] },
+  { id: 'o4', title: 'Code-Review für PR #213', area: 'work', due_date: isoInDays(0), description: null, duration_min: 45, priority: 'high', tags: ['dringend'], subtasks: [] },
+  { id: 'o5', title: 'Reisekostenabrechnung einreichen', area: 'work', due_date: null, description: null, duration_min: 30, priority: 'medium', tags: [], subtasks: [] },
+  { id: 'o6', title: 'Wäsche waschen', area: 'private', due_date: null, description: null, duration_min: 15, priority: 'low', tags: ['Haushalt'], subtasks: [] },
+  { id: 'o7', title: 'Zahnarzttermin vereinbaren', area: 'private', due_date: isoInDays(3), description: null, duration_min: 15, priority: 'medium', tags: [], subtasks: [] },
 ]

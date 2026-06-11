@@ -6,6 +6,7 @@ import CompletedTasks from './CompletedTasks.jsx'
 import { SkeletonLine, SkeletonRow } from './Skeleton.jsx'
 import { areas } from '../data/dummyData.js'
 import { isOverdue } from '../lib/date.js'
+import { allTags } from '../lib/tags.js'
 
 // Bereichsfilter-Chips: "Alle" + die drei Lebensbereiche.
 const AREA_FILTERS = [{ id: 'all', label: 'Alle' }, ...Object.values(areas)]
@@ -23,6 +24,7 @@ export default function TaskList({
 }) {
   const [query, setQuery] = useState('')
   const [areaFilter, setAreaFilter] = useState('all')
+  const [tagFilter, setTagFilter] = useState(null) // aktiver Tag oder null
 
   // Von außen gesetzter Bereichsfilter (z.B. Klick in der Statistik). Wir
   // übernehmen ihn als Startwert in den lokalen Filter; danach bleibt die
@@ -30,6 +32,13 @@ export default function TaskList({
   useEffect(() => {
     if (focusArea?.area) setAreaFilter(focusArea.area)
   }, [focusArea])
+
+  // Alle vorkommenden Tags für die Filter-Leiste.
+  const tags = allTags(tasks)
+  // Verschwindet der aktive Tag (z.B. letzte Task gelöscht), Filter lösen.
+  useEffect(() => {
+    if (tagFilter && !tags.includes(tagFilter)) setTagFilter(null)
+  }, [tags, tagFilter])
 
   // Wie viele offene Tasks sind überfällig? Steuert den "Überfällig"-Chip.
   const overdueCount = tasks.filter(
@@ -41,7 +50,7 @@ export default function TaskList({
       ? [...AREA_FILTERS, { id: 'overdue', label: `Überfällig (${overdueCount})` }]
       : AREA_FILTERS
 
-  const hasFilters = query.trim() !== '' || areaFilter !== 'all'
+  const hasFilters = query.trim() !== '' || areaFilter !== 'all' || tagFilter != null
   const q = query.trim().toLowerCase()
   const filtered = tasks.filter((t) => {
     if (areaFilter === 'overdue') {
@@ -49,10 +58,12 @@ export default function TaskList({
     } else if (areaFilter !== 'all' && t.area !== areaFilter) {
       return false
     }
+    if (tagFilter && !(t.tags || []).includes(tagFilter)) return false
     if (
       q &&
       !t.title.toLowerCase().includes(q) &&
-      !t.description?.toLowerCase().includes(q)
+      !t.description?.toLowerCase().includes(q) &&
+      !(t.tags || []).some((tag) => tag.toLowerCase().includes(q))
     )
       return false
     return true
@@ -134,6 +145,29 @@ export default function TaskList({
                 )
               })}
             </div>
+
+            {/* Tag-Filter: nur zeigen, wenn es Tags gibt. */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((t) => {
+                  const active = tagFilter === t
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTagFilter(active ? null : t)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        active
+                          ? 'border-ink bg-ink text-canvas'
+                          : 'border-line text-ink-soft hover:border-ink/30'
+                      }`}
+                    >
+                      #{t}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {filtered.length === 0 ? (
