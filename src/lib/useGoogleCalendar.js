@@ -9,6 +9,12 @@ import {
 // offen und verbunden ist (damit neue Meetings im Plan auftauchen).
 const REFRESH_MS = 5 * 60 * 1000
 
+// Mindestabstand zwischen zwei stillen Aktualisierungen. Verhindert, dass
+// sich `refresh()` und Browser-Events (z.B. `focus`, das auch beim
+// Öffnen/Schließen von Googles eigenem Anmeldefenster ausgelöst wird) zu
+// einer Endlosschleife aus sich selbst auslösenden Anfragen aufschaukeln.
+const MIN_REFRESH_GAP_MS = 60 * 1000
+
 // Verwaltet die Google-Kalender-Verbindung als überschaubare Zustände:
 //   'unconfigured' – keine Client-ID hinterlegt (zeigt Beispiel-Timeline)
 //   'idle'         – verbunden werden bereit (Knopf anzeigen)
@@ -44,7 +50,11 @@ export function useGoogleCalendar() {
   // Hintergrund-Aktualisierung: lädt die Termine still neu, OHNE den Status
   // auf 'loading' zu setzen (kein Flackern). Scheitert sie (z.B. Token
   // abgelaufen), behalten wir einfach die bisherigen Termine.
+  const lastRefreshRef = useRef(0)
   const refresh = useCallback(async () => {
+    const now = Date.now()
+    if (now - lastRefreshRef.current < MIN_REFRESH_GAP_MS) return
+    lastRefreshRef.current = now
     try {
       const token = await requestAccessToken({ silent: true })
       const evs = await fetchEvents(token, 7)
@@ -76,18 +86,21 @@ export function useGoogleCalendar() {
       if (connectedRef.current) refresh()
     }, REFRESH_MS)
 
+    // Bewusst nur `visibilitychange` (Tab-Wechsel), KEIN `window`-„focus":
+    // Googles eigenes Anmelde-/Token-Popup löst beim Öffnen und Schließen
+    // selbst Fokus-Events am Hauptfenster aus — ein `focus`-Listener, der
+    // dadurch erneut ein (stilles) Token-Popup anstößt, schaukelt sich zu
+    // einer Endlosschleife aus sich ständig öffnenden/schließenden Fenstern auf.
     const onVisible = () => {
       if (document.visibilityState === 'visible' && connectedRef.current) {
         refresh()
       }
     }
     document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('focus', onVisible)
 
     return () => {
       clearInterval(id)
       document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('focus', onVisible)
     }
   }, [refresh])
 
