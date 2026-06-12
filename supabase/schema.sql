@@ -34,6 +34,9 @@ alter table public.tasks add column if not exists completed_at timestamptz;
 alter table public.tasks add column if not exists priority text default 'medium';
 alter table public.tasks add column if not exists subtasks jsonb not null default '[]';
 alter table public.tasks add column if not exists tags jsonb not null default '[]';
+-- Tatsächlich gebrauchte Zeit (Minuten), beim Abhaken erfasst. Daraus lernt
+-- Clarity die Dauer-Schätzung für ähnliche Aufgaben (gleicher Kurs + Titel).
+alter table public.tasks add column if not exists actual_min int;
 
 -- Erlaubte Werte für die Wiederholung: feste Voreinstellungen oder ein
 -- 'days:'-Muster für bestimmte Wochentage (z.B. 'days:1,3,5').
@@ -54,6 +57,11 @@ alter table public.tasks add constraint tasks_priority_check
 alter table public.tasks drop constraint if exists tasks_duration_check;
 alter table public.tasks add constraint tasks_duration_check
   check (duration_min is null or (duration_min > 0 and duration_min <= 1440));
+
+-- Tatsächliche Dauer ebenfalls plausibel begrenzen.
+alter table public.tasks drop constraint if exists tasks_actual_check;
+alter table public.tasks add constraint tasks_actual_check
+  check (actual_min is null or (actual_min > 0 and actual_min <= 1440));
 
 -- Row Level Security: ohne passende Regel sieht niemand etwas.
 alter table public.tasks enable row level security;
