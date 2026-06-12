@@ -304,3 +304,4 @@ läuft (nicht im Browser).
 | 9 ✅  | Lernplaner: Arbeitszeiten je Wochentag, Serien-Aufgaben, „Schlau einplanen" (deadline-bewusst um Klausuren herum), lernende Zeitschätzung aus Ist-Zeiten |
 | 10 ✅ | „Heute" neu strukturiert (schlanker, ein Tagesplan-Block mit Fokus + KI), „Schlau einplanen" in den Studium-Hub verschoben |
 | 11 ✅ | **v2 — purer Studienplaner:** Bereiche Arbeit/Privat entfernt; ephemeres „Heute" (`planned_date`, Clean Slate ohne Rollover) mit Done-for-the-Day-Screen; KI-Pull „Deep Work" + „Rette meinen Tag" (Stunden-Limit, deterministischer Fallback); Auto-Split langer Aufgaben (max. 120 Min); Pace-Rückwärtsplanung je Kurs (5-Tage-Woche, Klausur- oder Zieldatum); Hausarbeiten-Manager und allgemeine To-Dos entfernt |
+| 12 ✅ | KI-Aufgaben-Analyse per Datei-Upload: Übungsblatt/Aufgabenstellung (.txt/.md/.pdf) anhängen, KI schlägt Dauer, Priorität (Schwierigkeit) und Art (Aufgabe/Klausur) vor (Groq, deterministischer Fallback ohne Key) |

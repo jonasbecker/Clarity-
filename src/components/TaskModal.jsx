@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mic, Trash2, X, Plus, Tag } from 'lucide-react'
+import { Mic, Paperclip, Trash2, X, Plus, Tag } from 'lucide-react'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
@@ -7,6 +7,8 @@ import { addTag, removeTag } from '../lib/tags.js'
 import { REPEAT_PRESETS, WEEKDAYS, parseDays, buildDaysRepeat } from '../lib/repeat.js'
 import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
 import { needsSplit, splitDuration } from '../lib/splitTask.js'
+import { isSupportedFile, extractText } from '../lib/fileText.js'
+import { useTaskAnalysis } from '../lib/useTaskAnalysis.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -62,6 +64,14 @@ export default function TaskModal({
   const [newTag, setNewTag] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
+  // Datei-Upload (optional): die KI schätzt daraus Dauer, Schwierigkeit & Art.
+  // Die Datei selbst wird nicht gespeichert, nur der extrahierte Text.
+  const [fileName, setFileName] = useState(null)
+  const [fileText, setFileText] = useState('')
+  const [fileError, setFileError] = useState(null)
+  const [fileBusy, setFileBusy] = useState(false)
+  const analysis = useTaskAnalysis()
+
   // Sprach-Eingabe: das Gesprochene landet direkt im Titel-Feld.
   const speech = useSpeech({ onResult: (text) => setTitle(text) })
 
@@ -83,6 +93,11 @@ export default function TaskModal({
     setTags(Array.isArray(task?.tags) ? task.tags : [])
     setNewTag('')
     setSaveAsTemplate(false)
+    setFileName(null)
+    setFileText('')
+    setFileError(null)
+    setFileBusy(false)
+    analysis.reset()
   }, [open, task])
 
   // Wurde gerade aus diesem Formular heraus ein neuer Kurs angelegt, ihn
@@ -129,6 +144,46 @@ export default function TaskModal({
     if (!newTag.trim()) return
     setTags((cur) => addTag(cur, newTag))
     setNewTag('')
+  }
+
+  // Datei auswählen: Text extrahieren (txt/md direkt, pdf über pdf.js).
+  async function handleFileChange(e) {
+    const f = e.target.files?.[0]
+    e.target.value = '' // gleiche Datei erneut auswählbar machen
+    if (!f) return
+    analysis.reset()
+    if (!isSupportedFile(f)) {
+      setFileError('Nur .txt, .md oder .pdf werden unterstützt.')
+      setFileName(null)
+      setFileText('')
+      return
+    }
+    setFileError(null)
+    setFileName(f.name)
+    setFileBusy(true)
+    try {
+      setFileText(await extractText(f))
+    } catch {
+      setFileError('Datei konnte nicht gelesen werden.')
+      setFileName(null)
+      setFileText('')
+    } finally {
+      setFileBusy(false)
+    }
+  }
+
+  // KI-Analyse anstoßen und Vorschläge (Dauer, Priorität, Art, Kurzfassung)
+  // übernehmen — der Nutzer kann sie vor dem Speichern noch anpassen.
+  async function handleAnalyzeFile() {
+    const courseName = courses.find((c) => c.id === courseId)?.name
+    const res = await analysis.analyze({ title: trimmed, courseName, text: fileText })
+    setDuration(res.duration_min)
+    setDurationTouched(true)
+    setPriority(res.priority)
+    setKind(res.kind)
+    if (res.summary) {
+      setDescription((cur) => (cur.trim() ? `${cur.trim()}\n\n${res.summary}` : res.summary))
+    }
   }
 
   function handleSubmit(e) {
@@ -232,6 +287,38 @@ export default function TaskModal({
             rows={3}
             className="mt-3 w-full resize-none rounded-xl border border-line bg-canvas px-4 py-3 text-sm outline-none transition-colors focus:border-ink/30"
           />
+
+          {/* Datei-Upload (optional): KI schätzt daraus Dauer, Schwierigkeit
+              und Art der Aufgabe. Die Datei selbst wird nicht gespeichert. */}
+          <label className="mt-3 flex w-full cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line bg-canvas px-4 py-3 text-sm text-ink-soft transition-colors hover:border-ink/30">
+            <Paperclip size={16} className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate">
+              {fileName || 'Aufgabenblatt hochladen (optional, .txt/.md/.pdf)'}
+            </span>
+            <input type="file" accept=".txt,.md,.pdf" onChange={handleFileChange} className="hidden" />
+          </label>
+          {fileError && <p className="mt-1.5 text-xs text-danger">{fileError}</p>}
+          {fileName && !fileError && (
+            <button
+              type="button"
+              onClick={handleAnalyzeFile}
+              disabled={fileBusy || analysis.status === 'loading'}
+              className="mt-2 w-full rounded-xl border border-line py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30 disabled:opacity-50"
+            >
+              {fileBusy
+                ? 'Datei wird gelesen …'
+                : analysis.status === 'loading'
+                  ? 'Analysiere …'
+                  : 'Mit KI analysieren'}
+            </button>
+          )}
+          {analysis.result && (
+            <p className="mt-1.5 text-xs text-ink-soft">
+              KI-Vorschlag übernommen — Dauer, Priorität und Art geprüft, gerne
+              anpassen.
+              {analysis.result.summary ? ` „${analysis.result.summary}"` : ''}
+            </p>
+          )}
 
           {/* Subtasks / Checkliste (bei Klausuren: Lernthemen) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
