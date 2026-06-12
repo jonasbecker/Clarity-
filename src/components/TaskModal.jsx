@@ -5,7 +5,12 @@ import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
 import { addTag, removeTag } from '../lib/tags.js'
 import { REPEAT_PRESETS, WEEKDAYS, parseDays, buildDaysRepeat } from '../lib/repeat.js'
-import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
+import {
+  estimateMinutes,
+  hasEstimateBasis,
+  estimateMinutesByCategory,
+  hasCategoryEstimateBasis,
+} from '../lib/estimate.js'
 import { needsSplit, splitDuration } from '../lib/splitTask.js'
 import { isSupportedFile, extractText } from '../lib/fileText.js'
 import { useTaskAnalysis } from '../lib/useTaskAnalysis.js'
@@ -172,18 +177,39 @@ export default function TaskModal({
     }
   }
 
-  // KI-Analyse anstoßen und Vorschläge (Dauer, Priorität, Art, Kurzfassung)
-  // übernehmen — der Nutzer kann sie vor dem Speichern noch anpassen.
+  // KI-Analyse anstoßen — das Ergebnis erscheint als Vorschlags-Karte, die
+  // Formularfelder bleiben bis zum bewussten "Übernehmen" unverändert.
   async function handleAnalyzeFile() {
     const courseName = courses.find((c) => c.id === courseId)?.name
-    const res = await analysis.analyze({ title: trimmed, courseName, text: fileText })
-    setDuration(res.duration_min)
+    await analysis.analyze({ title: trimmed, courseName, text: fileText })
+  }
+
+  // Steht für die erkannte Kategorie eine gelernte Ist-Zeit zur Verfügung
+  // (z.B. "Rechenaufgabe" mit bisherigen actual_min), schlägt das die reine
+  // Text-/KI-Schätzung — du kennst deine eigene Geschwindigkeit am besten.
+  const durationFromHistory =
+    !!analysis.result?.category &&
+    hasCategoryEstimateBasis(analysis.result.category, courseId, tasks)
+  const suggestedDuration = analysis.result
+    ? durationFromHistory
+      ? estimateMinutesByCategory(analysis.result.category, courseId, tasks, analysis.result.duration_min)
+      : analysis.result.duration_min
+    : null
+
+  // Vorschlag übernehmen: Dauer (ggf. die gelernte), Priorität, Art und
+  // Kategorie (als Tag) setzen, Kurzfassung an die Beschreibung anhängen.
+  function applySuggestion() {
+    const res = analysis.result
+    if (!res) return
+    setDuration(suggestedDuration)
     setDurationTouched(true)
     setPriority(res.priority)
     setKind(res.kind)
+    if (res.category) setTags((cur) => addTag(cur, res.category))
     if (res.summary) {
       setDescription((cur) => (cur.trim() ? `${cur.trim()}\n\n${res.summary}` : res.summary))
     }
+    analysis.reset()
   }
 
   function handleSubmit(e) {
@@ -298,7 +324,7 @@ export default function TaskModal({
             <input type="file" accept=".txt,.md,.pdf" onChange={handleFileChange} className="hidden" />
           </label>
           {fileError && <p className="mt-1.5 text-xs text-danger">{fileError}</p>}
-          {fileName && !fileError && (
+          {fileName && !fileError && !analysis.result && (
             <button
               type="button"
               onClick={handleAnalyzeFile}
@@ -312,12 +338,60 @@ export default function TaskModal({
                   : 'Mit KI analysieren'}
             </button>
           )}
+
+          {/* Vorschlags-Karte: zeigt die geschätzte Dauer deutlich VOR der
+              Übernahme. Die Formularfelder bleiben unverändert, bis der Nutzer
+              „Übernehmen" drückt. */}
           {analysis.result && (
-            <p className="mt-1.5 text-xs text-ink-soft">
-              KI-Vorschlag übernommen — Dauer, Priorität und Art geprüft, gerne
-              anpassen.
-              {analysis.result.summary ? ` „${analysis.result.summary}"` : ''}
-            </p>
+            <div className="mt-3 rounded-xl border border-line bg-canvas p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
+                KI-Vorschlag
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight">
+                ≈ {suggestedDuration} Min
+              </p>
+              <p className="text-xs text-ink-soft">
+                {durationFromHistory
+                  ? `aus deinen bisherigen Zeiten für ${analysis.result.category}`
+                  : 'KI-Schätzung'}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
+                  {PRIORITIES.find((p) => p.id === analysis.result.priority)?.label ??
+                    'Mittel'}
+                </span>
+                <span className="rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
+                  {analysis.result.kind === 'exam' ? 'Klausur' : 'Aufgabe'}
+                </span>
+                {analysis.result.category && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
+                    <Tag size={11} />
+                    {analysis.result.category}
+                  </span>
+                )}
+              </div>
+              {analysis.result.summary && (
+                <p className="mt-2 text-xs text-ink-soft">
+                  „{analysis.result.summary}"
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={applySuggestion}
+                  className="flex-1 rounded-xl bg-ink py-2.5 text-sm font-medium text-canvas transition-opacity hover:opacity-90"
+                >
+                  Übernehmen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => analysis.reset()}
+                  className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30"
+                >
+                  Verwerfen
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Subtasks / Checkliste (bei Klausuren: Lernthemen) */}

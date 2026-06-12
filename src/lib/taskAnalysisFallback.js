@@ -1,7 +1,9 @@
 // Deterministischer Fallback für die KI-Aufgaben-Analyse (kein Groq-Key/
 // Fehler — die Funktion bleibt nutzbar). Schätzt aus Titel + extrahiertem
-// Text: Dauer (Minuten, 15er-Schritte), Schwierigkeit (→ Priorität) und Art
-// (Aufgabe/Klausur).
+// Text: Dauer (Minuten, 15er-Schritte), Schwierigkeit (→ Priorität), Art
+// (Aufgabe/Klausur) und Aufgabentyp-Kategorie (Operatoren-basiert).
+
+import { detectOperators, estimateCategory } from './operators.js'
 
 const EXAM_WORDS = ['klausur', 'prüfung', 'exam', 'test']
 const HARD_WORDS = ['klausur', 'prüfung', 'abgabe', 'frist', 'deadline', 'beweis', 'projekt']
@@ -15,10 +17,18 @@ export function estimateDuration(text) {
   return Math.round(raw / 15) * 15
 }
 
+// Operatoren zeigen den Anforderungsbereich: AB III (beurteilen, diskutieren
+// …) macht eine Aufgabe schwer, reine AB-I-Operatoren (nennen, beschreiben
+// …) bei kurzem Text eher leicht.
 export function estimatePriority(title, text) {
   const haystack = `${title} ${text}`.toLowerCase()
   if (HARD_WORDS.some((w) => haystack.includes(w))) return 'high'
+
+  const ops = detectOperators(text)
+  if (ops.some((o) => o.level === 'III')) return 'high'
+
   const words = text.trim().split(/\s+/).filter(Boolean).length
+  if (ops.length > 0 && ops.every((o) => o.level === 'I') && words <= 150) return 'low'
   return words > 150 ? 'medium' : 'low'
 }
 
@@ -43,6 +53,7 @@ export function analyzeTaskFallback({ title = '', text = '' }) {
     duration_min: estimateDuration(text),
     priority: estimatePriority(title, text),
     kind: estimateKind(title, text),
+    category: estimateCategory(title, text),
     summary: estimateSummary(text),
   }
 }
