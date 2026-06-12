@@ -1,8 +1,6 @@
 import { useRef, useState } from 'react'
 import Header from '../components/Header.jsx'
-import FocusSection from '../components/FocusSection.jsx'
 import DayPlan from '../components/DayPlan.jsx'
-import StudyPlanner from '../components/StudyPlanner.jsx'
 import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
@@ -14,7 +12,6 @@ import PullToRefresh from '../components/PullToRefresh.jsx'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
-import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
@@ -46,13 +43,13 @@ export default function TodayView({
   addCourse,
   editCourse,
   removeCourse,
+  planPrefs,
   focusArea,
   focusCourse,
 }) {
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
   const aiWeek = useAiWeek()
-  const planPrefs = usePlanPrefs()
   const planOrder = usePlanOrder()
   const { templates, addTemplate, removeTemplate } = useTemplates(session)
 
@@ -203,26 +200,6 @@ export default function TodayView({
 
       {!loading && <WeekReview stats={stats} />}
 
-      <FocusSection
-        tasks={focus}
-        loading={loading}
-        summary={ai.status === 'ready' ? ai.plan?.summary : null}
-        aiStatus={ai.status}
-        aiError={ai.error}
-        onGenerate={() => ai.generate({ tasks: openTasks, events: todayEvents })}
-        onStartFocus={() => setFocusOpen(true)}
-      />
-
-      {!loading && (
-        <StudyPlanner
-          tasks={tasks}
-          courses={courses}
-          prefs={planPrefs}
-          eventsByDate={eventsByDate}
-          onEditTask={editTask}
-        />
-      )}
-
       <DayPlan
         tasks={openTasks}
         loading={loading}
@@ -233,7 +210,10 @@ export default function TodayView({
         prefs={planPrefs}
         ai={ai}
         aiWeek={aiWeek}
+        summary={ai.status === 'ready' ? ai.plan?.summary : null}
         onOptimize={() => ai.generate({ tasks: openTasks, events: todayEvents })}
+        onStartFocus={() => focusQueue.length > 0 && setFocusOpen(true)}
+        canFocus={focusQueue.length > 0}
         planOrder={planOrder}
       />
 

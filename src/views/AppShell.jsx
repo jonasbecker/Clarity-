@@ -25,6 +25,7 @@ import { useTasks } from '../lib/useTasks.js'
 import { useCourses } from '../lib/useCourses.js'
 import { usePapers } from '../lib/usePapers.js'
 import { useChores } from '../lib/useChores.js'
+import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { useOnboarding } from '../lib/useOnboarding.js'
@@ -47,6 +48,9 @@ export default function AppShell({ session }) {
   const coursesApi = useCourses(session)
   const papersApi = usePapers(session)
   const choresApi = useChores(session)
+  // Arbeitszeit-Einstellungen liegen in der Shell, damit Studium-Hub
+  // („Schlau einplanen") und „Heute" (Tagesplan) dieselben Fenster nutzen.
+  const planPrefs = usePlanPrefs()
   const { theme, toggle: toggleTheme } = useTheme()
   const notifications = useNotifications(tasksApi.tasks, tasksApi.loading)
   const onboarding = useOnboarding()
@@ -156,6 +160,8 @@ export default function AppShell({ session }) {
           name={user.name}
           tasks={tasksApi.tasks}
           courses={coursesApi.courses}
+          planPrefs={planPrefs}
+          onEditTask={tasksApi.editTask}
           onOpenCourse={openCourse}
           onEndSemester={endSemester}
           chores={choresApi.chores}
@@ -180,6 +186,7 @@ export default function AppShell({ session }) {
           addCourse={coursesApi.addCourse}
           editCourse={coursesApi.editCourse}
           removeCourse={coursesApi.removeCourse}
+          planPrefs={planPrefs}
           focusArea={areaJump}
           focusCourse={courseJump}
         />

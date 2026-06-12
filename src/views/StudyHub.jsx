@@ -1,5 +1,6 @@
 import { Award, CalendarClock, GraduationCap, Layers, ChevronRight } from 'lucide-react'
 import ChoreList from '../components/ChoreList.jsx'
+import StudyPlanner from '../components/StudyPlanner.jsx'
 import { getGreeting, formatLongDate, formatDueLabel } from '../lib/date.js'
 import { upcomingExams } from '../lib/exams.js'
 import {
@@ -28,6 +29,8 @@ export default function StudyHub({
   name,
   tasks,
   courses,
+  planPrefs,
+  onEditTask,
   onOpenCourse,
   onEndSemester,
   chores,
@@ -133,6 +136,17 @@ export default function StudyHub({
                 })}
               </div>
             </section>
+          )}
+
+          {/* „Schlau einplanen": verteilt offene Lernaufgaben deadline-bewusst
+              in die Arbeitszeiten — hier direkt neben den Klausuren. */}
+          {planPrefs && onEditTask && (
+            <StudyPlanner
+              tasks={tasks}
+              courses={active}
+              prefs={planPrefs}
+              onEditTask={onEditTask}
+            />
           )}
 
           {/* Kurs-Galerie */}
