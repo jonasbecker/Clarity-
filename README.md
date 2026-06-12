@@ -221,6 +221,9 @@ Konto liegen (und über Geräte synchronisieren), verbinde Supabase — kostenlo
 1. **Projekt anlegen** auf [supabase.com](https://supabase.com) (kostenloser Account).
 2. **Tabelle erstellen**: im Projekt links *SQL Editor → New query*, den Inhalt
    von [`supabase/schema.sql`](supabase/schema.sql) einfügen und *Run* klicken.
+   Die Datei ist idempotent — nach einem Update einfach **erneut ausführen**, um
+   neue Spalten zu ergänzen (für v2: `tasks.planned_date`, `courses.target_date`).
+   Bestehende Daten bleiben erhalten; der Demo-Modus braucht nichts.
 3. **Schlüssel eintragen**: *Project Settings → API* öffnen, dann:
    ```bash
    cp .env.example .env.local
@@ -300,3 +303,4 @@ läuft (nicht im Browser).
 | 8 ✅  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |
 | 9 ✅  | Lernplaner: Arbeitszeiten je Wochentag, Serien-Aufgaben, „Schlau einplanen" (deadline-bewusst um Klausuren herum), lernende Zeitschätzung aus Ist-Zeiten |
 | 10 ✅ | „Heute" neu strukturiert (schlanker, ein Tagesplan-Block mit Fokus + KI), „Schlau einplanen" in den Studium-Hub verschoben |
+| 11 ✅ | **v2 — purer Studienplaner:** Bereiche Arbeit/Privat entfernt; ephemeres „Heute" (`planned_date`, Clean Slate ohne Rollover) mit Done-for-the-Day-Screen; KI-Pull „Deep Work" + „Rette meinen Tag" (Stunden-Limit, deterministischer Fallback); Auto-Split langer Aufgaben (max. 120 Min); Pace-Rückwärtsplanung je Kurs (5-Tage-Woche, Klausur- oder Zieldatum); Hausarbeiten-Manager und allgemeine To-Dos entfernt |
