@@ -42,7 +42,8 @@ import { user } from '../data/dummyData.js'
 // konsistent. Die Navigation läuft ohne Router über einen einfachen
 // `view`-State.
 //
-// Start ist der Studium-Hub: Clarity ist in erster Linie ein Studienplaner.
+// Start ist „Heute": beim Öffnen sieht man sofort den Tagesplan und damit
+// schnell seine Tagesübersicht. Der Studium-Hub ist einen Tipp entfernt.
 export default function AppShell({ session }) {
   const tasksApi = useTasks(session)
   const coursesApi = useCourses(session)
@@ -56,7 +57,7 @@ export default function AppShell({ session }) {
   const onboarding = useOnboarding()
   const online = useOnline()
 
-  const [view, setView] = useState('hub')
+  const [view, setView] = useState('today')
   const [statsOpen, setStatsOpen] = useState(false)
   // Geöffnete Fach-Detailseite (Kurs-id) bzw. Kurs im Bearbeiten-Formular.
   const [detailCourseId, setDetailCourseId] = useState(null)

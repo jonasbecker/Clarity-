@@ -10,7 +10,6 @@ import {
   RotateCcw,
   PartyPopper,
   Clock,
-  Play,
 } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import { SkeletonLine } from './Skeleton.jsx'
@@ -50,8 +49,6 @@ export default function DayPlan({
   aiWeek,
   summary,
   onOptimize,
-  onStartFocus,
-  canFocus,
   planOrder,
   dayCount = 5,
 }) {
@@ -170,16 +167,6 @@ export default function DayPlan({
                 )}
                 {aiLoading ? 'Plant …' : aiActive ? 'KI-optimiert' : 'Mit KI optimieren'}
               </button>
-              {onStartFocus && canFocus && (
-                <button
-                  type="button"
-                  onClick={onStartFocus}
-                  className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-canvas transition-transform active:scale-95"
-                >
-                  <Play size={12} strokeWidth={2.5} />
-                  Fokus
-                </button>
-              )}
             </span>
           ) : null
         }

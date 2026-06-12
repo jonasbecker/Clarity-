@@ -213,8 +213,6 @@ export default function TodayView({
         aiWeek={aiWeek}
         summary={ai.status === 'ready' ? ai.plan?.summary : null}
         onOptimize={() => ai.generate({ tasks: openTasks, events: todayEvents })}
-        onStartFocus={() => focusQueue.length > 0 && setFocusOpen(true)}
-        canFocus={focusQueue.length > 0}
         planOrder={planOrder}
       />
 
