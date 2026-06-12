@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Check, X, ArrowRight } from 'lucide-react'
-import { areas } from '../data/dummyData.js'
 import { formatDueLabel } from '../lib/date.js'
 import { toHHMM } from '../lib/scheduler.js'
 import { tap } from '../lib/haptics.js'
@@ -57,11 +56,8 @@ export default function FocusMode({ tasks, onToggle, onClose }) {
           </>
         ) : (
           <>
-            <span
-              className="text-sm font-semibold uppercase tracking-wide"
-              style={{ color: areas[task.area].color }}
-            >
-              {areas[task.area].label}
+            <span className="text-sm font-semibold uppercase tracking-wide text-area-study">
+              Fokus
             </span>
             <h2 className="mt-3 max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {task.title}

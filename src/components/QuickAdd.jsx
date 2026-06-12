@@ -1,9 +1,8 @@
 import { Plus, X } from 'lucide-react'
-import { areas } from '../data/dummyData.js'
 import { formatDuration } from '../lib/scheduler.js'
 
 // "Schnell hinzufügen": Chips aus deinen Vorlagen. Ein Tipp auf den Chip legt
-// sofort eine Task für heute an (mit Bereich/Dauer/Wiederholung der Vorlage);
+// sofort eine Task für heute an (mit Dauer/Wiederholung der Vorlage);
 // das × entfernt die Vorlage. Erscheint nur, wenn es Vorlagen gibt.
 export default function QuickAdd({ templates, onUse, onRemove }) {
   if (templates.length === 0) return null
@@ -13,7 +12,6 @@ export default function QuickAdd({ templates, onUse, onRemove }) {
       <p className="mb-2 text-sm font-medium text-ink-soft">Schnell hinzufügen</p>
       <div className="flex flex-wrap gap-2">
         {templates.map((t) => {
-          const area = areas[t.area]
           return (
             <span
               key={t.id}
@@ -26,11 +24,6 @@ export default function QuickAdd({ templates, onUse, onRemove }) {
                 aria-label={`„${t.title}" für heute anlegen`}
               >
                 <Plus size={13} className="text-ink-soft" />
-                <span
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: area.color }}
-                  aria-hidden="true"
-                />
                 <span>{t.title}</span>
                 <span className="text-xs text-ink-soft">
                   {formatDuration(t.duration_min)}

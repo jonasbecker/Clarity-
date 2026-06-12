@@ -14,7 +14,6 @@ import {
 import SectionTitle from './SectionTitle.jsx'
 import { SkeletonLine } from './Skeleton.jsx'
 import WorkHoursEditor from './WorkHoursEditor.jsx'
-import { areas } from '../data/dummyData.js'
 import { useCollapsible } from '../lib/useCollapsible.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
@@ -27,6 +26,9 @@ import {
   toHHMM,
   formatDuration,
 } from '../lib/scheduler.js'
+
+// Neutraler Akzent für die Abhak-Kreise im Plan (alle Aufgaben sind Studium).
+const ACCENT = 'var(--color-area-study)'
 
 // "Dein Tagesplan" — der KI-Kalender (Motion-Idee).
 //
@@ -535,7 +537,6 @@ function DayCard({ day, seq, onToggle, onMove, reasonOf }) {
 // Kompakte Task-Zeile in der Wochenansicht (mit Hoch/Runter).
 // `reason` (optional): kurze KI-Begründung für den gewählten Tag.
 function CompactTaskRow({ item, seq, onToggle, onMove, reason }) {
-  const area = areas[item.task.area]
   const pos = seq.indexOf(item.task.id)
   const total = seq.length
   return (
@@ -548,12 +549,12 @@ function CompactTaskRow({ item, seq, onToggle, onMove, reason }) {
         onClick={() => onToggle(item.task.id)}
         aria-label="Als erledigt markieren"
         className="group grid size-4 shrink-0 place-items-center rounded-full border-2 transition-colors"
-        style={{ borderColor: area.color }}
+        style={{ borderColor: ACCENT }}
       >
         <Check
           size={10}
           strokeWidth={3}
-          style={{ color: area.color }}
+          style={{ color: ACCENT }}
           className="opacity-0 transition-opacity group-hover:opacity-100"
         />
       </button>
@@ -597,7 +598,7 @@ function Overflow({ tasks, label }) {
           <li key={t.id} className="flex items-center gap-2 text-sm text-ink-soft">
             <span
               className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: areas[t.area].color }}
+              style={{ backgroundColor: ACCENT }}
               aria-hidden="true"
             />
             <span className="truncate">{t.title}</span>
@@ -651,7 +652,6 @@ function TaskRow({
   onDragEnd,
   onDrop,
 }) {
-  const area = areas[item.task.area]
   return (
     <li
       draggable
@@ -675,12 +675,12 @@ function TaskRow({
           onClick={() => onToggle(item.task.id)}
           aria-label="Als erledigt markieren"
           className="group mt-1 grid size-4 place-items-center rounded-full border-2 ring-4 ring-surface transition-colors"
-          style={{ borderColor: area.color }}
+          style={{ borderColor: ACCENT }}
         >
           <Check
             size={10}
             strokeWidth={3}
-            style={{ color: area.color }}
+            style={{ color: ACCENT }}
             className="opacity-0 transition-opacity group-hover:opacity-100"
           />
         </button>

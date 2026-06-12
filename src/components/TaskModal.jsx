@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Mic, Trash2, X, Plus, Tag } from 'lucide-react'
-import { areas } from '../data/dummyData.js'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
 import { addTag, removeTag } from '../lib/tags.js'
 import { REPEAT_PRESETS, WEEKDAYS, parseDays, buildDaysRepeat } from '../lib/repeat.js'
 import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
+import { needsSplit, splitDuration } from '../lib/splitTask.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -47,9 +47,8 @@ export default function TaskModal({
 }) {
   const isEdit = Boolean(task)
   const [title, setTitle] = useState('')
-  const [area, setArea] = useState('study')
-  const [courseId, setCourseId] = useState(null) // zugeordneter Kurs (nur Studium)
-  const [kind, setKind] = useState('task') // 'task' | 'exam' (nur Studium)
+  const [courseId, setCourseId] = useState(null) // zugeordneter Kurs
+  const [kind, setKind] = useState('task') // 'task' | 'exam'
   const [dueDate, setDueDate] = useState(null) // 'YYYY-MM-DD' oder null
   const [description, setDescription] = useState('')
   const [repeat, setRepeat] = useState(null) // siehe lib/repeat.js
@@ -70,7 +69,6 @@ export default function TaskModal({
   useEffect(() => {
     if (!open) return
     setTitle(task?.title ?? '')
-    setArea(task?.area ?? 'study')
     setCourseId(task?.course_id ?? null)
     setKind(task?.kind === 'exam' ? 'exam' : 'task')
     setDueDate(task?.due_date ?? null)
@@ -93,15 +91,15 @@ export default function TaskModal({
     if (preselectCourse?.id) setCourseId(preselectCourse.id)
   }, [preselectCourse])
 
-  // Lernende Schätzung: bei einer NEUEN Studium-Aufgabe die Dauer aus den
-  // bisherigen Ist-Zeiten ähnlicher Aufgaben vorschlagen — solange du sie nicht
-  // selbst gewählt hast. Aktualisiert sich live beim Tippen des Titels.
+  // Lernende Schätzung: bei einer NEUEN Aufgabe die Dauer aus den bisherigen
+  // Ist-Zeiten ähnlicher Aufgaben vorschlagen — solange du sie nicht selbst
+  // gewählt hast. Aktualisiert sich live beim Tippen des Titels.
   const estimate = estimateMinutes(title, courseId, tasks)
   const fromEstimate =
-    !isEdit && area === 'study' && title.trim() && hasEstimateBasis(title, courseId, tasks)
+    !isEdit && title.trim() && hasEstimateBasis(title, courseId, tasks)
   useEffect(() => {
-    if (!isEdit && area === 'study' && !durationTouched) setDuration(estimate)
-  }, [estimate, isEdit, area, durationTouched])
+    if (!isEdit && !durationTouched) setDuration(estimate)
+  }, [estimate, isEdit, durationTouched])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
   useEffect(() => {
@@ -138,10 +136,9 @@ export default function TaskModal({
     if (!canSubmit) return
     onSubmit({
       title: trimmed,
-      area,
-      // Kurs/Klausur nur im Studium — sonst neutral (Doppelabsicherung).
-      course_id: area === 'study' ? courseId : null,
-      kind: area === 'study' ? kind : 'task',
+      area: 'study', // reiner Studienplaner — area bleibt intern 'study'
+      course_id: courseId,
+      kind,
       due_date: dueDate,
       description: description.trim() || null,
       repeat,
@@ -154,7 +151,7 @@ export default function TaskModal({
     if (!isEdit && saveAsTemplate && onSaveTemplate) {
       onSaveTemplate({
         title: trimmed,
-        area,
+        area: 'study',
         duration_min: duration,
         description: description.trim() || null,
         repeat,
@@ -238,7 +235,7 @@ export default function TaskModal({
 
           {/* Subtasks / Checkliste (bei Klausuren: Lernthemen) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
-            {kind === 'exam' && area === 'study' ? 'Lernthemen' : 'Checkliste'}{' '}
+            {kind === 'exam' ? 'Lernthemen' : 'Checkliste'}{' '}
             <span className="font-normal">(optional)</span>
           </p>
           {subtasks.length > 0 && (
@@ -294,94 +291,59 @@ export default function TaskModal({
             </button>
           </div>
 
-          {/* Bereich */}
-          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Bereich</p>
-          <div className="grid grid-cols-3 gap-2">
-            {Object.values(areas).map((a) => {
-              const active = area === a.id
+          {/* Kurs — optionale Zuordnung zu einem Modul */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Kurs <span className="font-normal">(optional)</span>
+          </p>
+          <div className="flex gap-2">
+            <select
+              value={courseId ?? ''}
+              onChange={(e) => setCourseId(e.target.value || null)}
+              className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+            >
+              <option value="">Kein Kurs</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {onManageCourse && (
+              <button
+                type="button"
+                onClick={() => onManageCourse(null)}
+                aria-label="Neuen Kurs anlegen"
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+              >
+                <Plus size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Typ: normale Aufgabe oder Klausur (mit Lernthemen) */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Typ</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'task', label: 'Aufgabe' },
+              { id: 'exam', label: 'Klausur' },
+            ].map((k) => {
+              const active = kind === k.id
               return (
                 <button
-                  key={a.id}
+                  key={k.id}
                   type="button"
-                  onClick={() => {
-                    setArea(a.id)
-                    // Kurs/Klausur sind reine Studium-Konzepte — beim Wechsel
-                    // weg von Studium Zuordnung und Klausur-Typ zurücksetzen.
-                    if (a.id !== 'study') {
-                      setCourseId(null)
-                      setKind('task')
-                    }
-                  }}
-                  className="rounded-xl border-2 py-2 text-sm font-medium transition-colors"
-                  style={{
-                    borderColor: active ? a.color : 'var(--color-line)',
-                    color: active ? a.color : 'var(--color-ink-soft)',
-                    backgroundColor: active ? `${a.color}14` : 'transparent',
-                  }}
+                  onClick={() => setKind(k.id)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
                 >
-                  {a.label}
+                  {k.label}
                 </button>
               )
             })}
           </div>
-
-          {/* Kurs (nur im Studium) — optionale Zuordnung zu einem Modul */}
-          {area === 'study' && (
-            <>
-              <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
-                Kurs <span className="font-normal">(optional)</span>
-              </p>
-              <div className="flex gap-2">
-                <select
-                  value={courseId ?? ''}
-                  onChange={(e) => setCourseId(e.target.value || null)}
-                  className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
-                >
-                  <option value="">Kein Kurs</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                {onManageCourse && (
-                  <button
-                    type="button"
-                    onClick={() => onManageCourse(null)}
-                    aria-label="Neuen Kurs anlegen"
-                    className="grid size-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
-                  >
-                    <Plus size={18} />
-                  </button>
-                )}
-              </div>
-
-              {/* Typ: normale Aufgabe oder Klausur (mit Lernthemen) */}
-              <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Typ</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'task', label: 'Aufgabe' },
-                  { id: 'exam', label: 'Klausur' },
-                ].map((k) => {
-                  const active = kind === k.id
-                  return (
-                    <button
-                      key={k.id}
-                      type="button"
-                      onClick={() => setKind(k.id)}
-                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                        active
-                          ? 'border-ink bg-ink text-canvas'
-                          : 'border-line text-ink-soft hover:border-ink/30'
-                      }`}
-                    >
-                      {k.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </>
-          )}
 
           {/* Dauer (für den Tagesplan) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
@@ -415,6 +377,29 @@ export default function TaskModal({
               )
             })}
           </div>
+          {/* Eigene Dauer (für längere Aufgaben) — wird ab 120 Min automatisch
+              in Teile zerlegt. */}
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="number"
+              min="5"
+              step="5"
+              value={duration}
+              onChange={(e) => {
+                setDuration(Math.max(0, Math.floor(Number(e.target.value) || 0)))
+                setDurationTouched(true)
+              }}
+              aria-label="Eigene Dauer in Minuten"
+              className="w-24 rounded-xl border border-line bg-canvas px-3 py-2 text-sm outline-none transition-colors focus:border-ink/30"
+            />
+            <span className="text-sm text-ink-soft">Minuten</span>
+          </div>
+          {needsSplit(duration) && (
+            <p className="mt-1.5 text-xs text-ink-soft">
+              Wird automatisch in {splitDuration(duration).length} Teile à max.
+              120 Min zerlegt.
+            </p>
+          )}
 
           {/* Priorität */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">Priorität</p>
@@ -490,7 +475,7 @@ export default function TaskModal({
           {/* Fällig: Schnell-Chips + Kalender-Feld */}
           <div className="mb-2 mt-5 flex items-center justify-between">
             <p className="text-sm font-medium text-ink-soft">
-              {kind === 'exam' && area === 'study' ? (
+              {kind === 'exam' ? (
                 'Klausurdatum'
               ) : (
                 <>

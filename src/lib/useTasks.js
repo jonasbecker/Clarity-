@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from './supabase.js'
 import { fetchTasks, createTask, updateTask, deleteTask } from './tasks.js'
 import { nextDueDate } from './repeat.js'
 import { toISODate } from './date.js'
+import { needsSplit, buildSplitTasks } from './splitTask.js'
 import { openTasks as demoTasks } from '../data/dummyData.js'
 
 // Wie lange nach dem Löschen Zeit zum Rückgängigmachen bleibt, bevor die
@@ -103,17 +104,34 @@ export function useTasks(session) {
     }
   }
 
+  // Neue Aufgabe(n) anlegen. Auto-Split: ist die geschätzte Dauer größer als das
+  // harte 120-Minuten-Limit, wird die Aufgabe automatisch in mehrere Teile
+  // („… – Teil 1/2/…") zerschnitten.
   async function addTask(fields) {
+    const parts = needsSplit(fields.duration_min) ? buildSplitTasks(fields) : [fields]
+
     if (!isSupabaseConfigured) {
-      setTasks((prev) => [
-        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, status: 'todo', actual_min: null, area: 'study', planned_date: null, ...fields },
-        ...prev,
-      ])
+      const rows = parts.map((p) => ({
+        id: crypto.randomUUID(),
+        done: false,
+        priority: 'medium',
+        subtasks: [],
+        tags: [],
+        kind: 'task',
+        course_id: null,
+        status: 'todo',
+        actual_min: null,
+        area: 'study',
+        planned_date: null,
+        ...p,
+      }))
+      setTasks((prev) => [...rows, ...prev])
       return
     }
     try {
-      const created = await createTask(fields)
-      setTasks((prev) => [created, ...prev])
+      const created = []
+      for (const p of parts) created.push(await createTask(p))
+      setTasks((prev) => [...created, ...prev])
     } catch (e) {
       setError(e.message)
     }

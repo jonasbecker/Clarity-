@@ -4,17 +4,15 @@ import SectionTitle from './SectionTitle.jsx'
 import TaskCard from './TaskCard.jsx'
 import CompletedTasks from './CompletedTasks.jsx'
 import { SkeletonRow } from './Skeleton.jsx'
-import { areas } from '../data/dummyData.js'
-import { isOverdue } from '../lib/date.js'
+import { isOverdue, toISODate } from '../lib/date.js'
 import { allTags } from '../lib/tags.js'
 
-// Bereichsfilter-Chips: "Alle" + die drei Lebensbereiche.
-const AREA_FILTERS = [{ id: 'all', label: 'Alle' }, ...Object.values(areas)]
-
-// Liste der Tasks: Suche + Bereichsfilter oben, danach EINE nach Dringlichkeit
-// sortierte Liste der offenen Tasks (überfällige zuerst), erledigte separat
-// unten in einem einklappbaren Bereich. Der Bereich einer Task ist am farbigen
-// Abhak-Kreis erkennbar; gefiltert wird über die Chips.
+// Liste der Tasks: Suche + Filter oben (Überfällig, Tags, Kurse), danach EINE
+// nach Dringlichkeit sortierte Liste der offenen Tasks (überfällige zuerst),
+// erledigte separat unten in einem einklappbaren Bereich.
+//
+// `onTogglePlan`/`onSetStatus` (optional) reichen die „Heute"- und „Dabei"-
+// Steuerung an die Karten durch (genutzt in der Heute-Ansicht).
 export default function TaskList({
   tasks,
   loading,
@@ -22,31 +20,23 @@ export default function TaskList({
   onEdit,
   onDelete,
   searchInputRef,
-  focusArea,
   courses = [],
   focusCourse,
+  onTogglePlan,
+  onSetStatus,
 }) {
+  const todayISO = toISODate(new Date())
   const [query, setQuery] = useState('')
-  const [areaFilter, setAreaFilter] = useState('all')
+  const [overdueOnly, setOverdueOnly] = useState(false)
   const [tagFilter, setTagFilter] = useState(null) // aktiver Tag oder null
   const [courseFilter, setCourseFilter] = useState(null) // aktiver Kurs oder null
 
   // Kurse als Map (id → Kurs) für schnelle Anzeige in den Karten.
   const courseById = new Map(courses.map((c) => [c.id, c]))
 
-  // Von außen gesetzter Bereichsfilter (z.B. Klick in der Statistik). Wir
-  // übernehmen ihn als Startwert in den lokalen Filter; danach bleibt die
-  // Auswahl wieder beim Nutzer.
+  // Von außen gesetzter Kurs-Filter (z.B. Klick im Studium-Hub).
   useEffect(() => {
-    if (focusArea?.area) setAreaFilter(focusArea.area)
-  }, [focusArea])
-
-  // Von außen gesetzter Kurs-Filter (z.B. Klick im Studium-Dashboard).
-  useEffect(() => {
-    if (focusCourse?.id) {
-      setAreaFilter('study')
-      setCourseFilter(focusCourse.id)
-    }
+    if (focusCourse?.id) setCourseFilter(focusCourse.id)
   }, [focusCourse])
 
   // Alle vorkommenden Tags für die Filter-Leiste.
@@ -60,38 +50,26 @@ export default function TaskList({
   // Filter-Chips (analog zu den Tags).
   const usedCourseIds = new Set(tasks.map((t) => t.course_id).filter(Boolean))
   const courseChips = courses.filter((c) => usedCourseIds.has(c.id))
-  // Kurs-Filter nur im Studium/„Alle" sinnvoll; sonst (und bei verschwundenem
-  // Kurs) lösen.
-  const courseFilterUsable = areaFilter === 'all' || areaFilter === 'study'
+  // Aktiven Kurs-Filter lösen, wenn der Kurs nicht mehr vorkommt.
   useEffect(() => {
-    if (courseFilter && (!courseFilterUsable || !usedCourseIds.has(courseFilter))) {
-      setCourseFilter(null)
-    }
+    if (courseFilter && !usedCourseIds.has(courseFilter)) setCourseFilter(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseFilter, courseFilterUsable, tasks])
+  }, [courseFilter, tasks])
 
   // Wie viele offene Tasks sind überfällig? Steuert den "Überfällig"-Chip.
   const overdueCount = tasks.filter(
     (t) => !t.done && isOverdue(t.due_date),
   ).length
-  // Chip nur anbieten, wenn es etwas Überfälliges gibt.
-  const FILTERS =
-    overdueCount > 0
-      ? [...AREA_FILTERS, { id: 'overdue', label: `Überfällig (${overdueCount})` }]
-      : AREA_FILTERS
+  // Überfällig-Filter lösen, falls nichts mehr überfällig ist.
+  useEffect(() => {
+    if (overdueOnly && overdueCount === 0) setOverdueOnly(false)
+  }, [overdueOnly, overdueCount])
 
   const hasFilters =
-    query.trim() !== '' ||
-    areaFilter !== 'all' ||
-    tagFilter != null ||
-    courseFilter != null
+    query.trim() !== '' || overdueOnly || tagFilter != null || courseFilter != null
   const q = query.trim().toLowerCase()
   const filtered = tasks.filter((t) => {
-    if (areaFilter === 'overdue') {
-      if (t.done || !isOverdue(t.due_date)) return false
-    } else if (areaFilter !== 'all' && t.area !== areaFilter) {
-      return false
-    }
+    if (overdueOnly && (t.done || !isOverdue(t.due_date))) return false
     if (tagFilter && !(t.tags || []).includes(tagFilter)) return false
     if (courseFilter && t.course_id !== courseFilter) return false
     if (
@@ -166,25 +144,22 @@ export default function TaskList({
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {FILTERS.map((f) => {
-                const active = areaFilter === f.id
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setAreaFilter(f.id)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      active
-                        ? 'border-ink bg-ink text-canvas'
-                        : 'border-line text-ink-soft hover:border-ink/30'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                )
-              })}
-            </div>
+            {/* Überfällig-Filter: nur zeigen, wenn etwas überfällig ist. */}
+            {overdueCount > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOverdueOnly((v) => !v)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    overdueOnly
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  Überfällig ({overdueCount})
+                </button>
+              </div>
+            )}
 
             {/* Tag-Filter: nur zeigen, wenn es Tags gibt. */}
             {tags.length > 0 && (
@@ -209,8 +184,8 @@ export default function TaskList({
               </div>
             )}
 
-            {/* Kurs-Filter: nur im Studium/„Alle" und wenn Kurse vorkommen. */}
-            {courseFilterUsable && courseChips.length > 0 && (
+            {/* Kurs-Filter: nur wenn Kurse in den Aufgaben vorkommen. */}
+            {courseChips.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {courseChips.map((c) => {
                   const active = courseFilter === c.id
@@ -263,6 +238,9 @@ export default function TaskList({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             courseById={courseById}
+                            planned={task.planned_date === todayISO}
+                            onTogglePlan={onTogglePlan}
+                            onSetStatus={onSetStatus}
                           />
                         ))}
                       </div>

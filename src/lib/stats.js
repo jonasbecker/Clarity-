@@ -1,8 +1,8 @@
 import { toISODate } from './date.js'
 
 // Wochenbilanz aus den aktuellen Tasks: wie viele wurden in den letzten 7
-// Tagen (inkl. heute) erledigt — insgesamt, pro Bereich, und als Streak
-// (aufeinanderfolgende Tage mit mind. 1 erledigter Task, rückwärts ab heute).
+// Tagen (inkl. heute) erledigt — insgesamt und als Streak (aufeinanderfolgende
+// Tage mit mind. 1 erledigter Task, rückwärts ab heute).
 export function weekStats(tasks) {
   const now = new Date()
   const start = new Date(now)
@@ -12,11 +12,6 @@ export function weekStats(tasks) {
   const completed = tasks.filter(
     (t) => t.done && t.completed_at && new Date(t.completed_at) >= start,
   )
-
-  const byArea = { study: 0, work: 0, private: 0 }
-  for (const t of completed) {
-    if (byArea[t.area] != null) byArea[t.area] += 1
-  }
 
   const doneDays = new Set(
     completed.map((t) => toISODate(new Date(t.completed_at))),
@@ -29,5 +24,5 @@ export function weekStats(tasks) {
     streak += 1
   }
 
-  return { total: completed.length, byArea, streak }
+  return { total: completed.length, streak }
 }

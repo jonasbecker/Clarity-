@@ -33,13 +33,11 @@ export function productivityStats(tasks, weeks = 6) {
     (t) => t.done && t.completed_at && new Date(t.completed_at) >= windowStart,
   )
 
-  const byArea = { study: 0, work: 0, private: 0 }
   const byTimeOfDay = TIME_BUCKETS.map((b) => ({ id: b.id, label: b.label, value: 0 }))
   const byWeekday = WEEKDAY_SHORT.map((label) => ({ label, value: 0 }))
 
   for (const t of completed) {
     const d = new Date(t.completed_at)
-    if (byArea[t.area] != null) byArea[t.area] += 1
     byTimeOfDay.find((b) => b.id === timeBucketFor(d.getHours()).id).value += 1
     byWeekday[d.getDay()].value += 1
   }
@@ -69,7 +67,6 @@ export function productivityStats(tasks, weeks = 6) {
     total: completed.length,
     weeks,
     avgPerWeek: Math.round((completed.length / weeks) * 10) / 10,
-    byArea,
     byTimeOfDay,
     byWeekday,
     weeklyTrend,

@@ -1,10 +1,7 @@
-import { areas } from '../data/dummyData.js'
-
 // Eine Zeile in der Tages-Timeline: Zeit links, farbiger Punkt, Termin.
-// Funktioniert für Dummy-Events (mit `area`) UND echte Kalender-Events
-// (ohne `area` → neutraler Punkt, evtl. ganztägig).
+// Termine sind neutral (keine Bereichsfarbe mehr), evtl. ganztägig.
 export default function TimelineItem({ event }) {
-  const color = event.area ? areas[event.area].color : '#94a3b8' // neutrales Slate
+  const color = '#94a3b8' // neutrales Slate
 
   return (
     <li className="flex gap-3">

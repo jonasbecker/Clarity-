@@ -62,10 +62,8 @@ export default function AppShell({ session }) {
   // Geöffnete Fach-Detailseite (Kurs-id) bzw. Kurs im Bearbeiten-Formular.
   const [detailCourseId, setDetailCourseId] = useState(null)
   const [editingCourse, setEditingCourse] = useState(null)
-  // Sprünge in die „Heute"-Liste: Bereichs-Filter (aus der Statistik) bzw.
-  // Kurs-Filter (aus dem Hub). `key` sorgt dafür, dass auch wiederholte
-  // Klicks denselben Filter erneut auslösen.
-  const [areaJump, setAreaJump] = useState(null)
+  // Sprung in die „Heute"-Liste: Kurs-Filter (aus dem Hub). `key` sorgt dafür,
+  // dass auch wiederholte Klicks denselben Filter erneut auslösen.
   const [courseJump, setCourseJump] = useState(null)
   // Beim Abhaken einer Lernaufgabe kurz nach der tatsächlichen Dauer fragen
   // (füttert die lernende Schätzung). Hält die gerade erledigte Aufgabe.
@@ -103,13 +101,13 @@ export default function AppShell({ session }) {
   }
 
   // Abhaken mit Zeiterfassung: schaltet wie gewohnt um und fragt anschließend
-  // bei frisch erledigten Lernaufgaben (Studium, keine Klausur) nach der
-  // tatsächlichen Dauer. Beim Wieder-Öffnen (un-done) kein Dialog.
+  // bei frisch erledigten Lernaufgaben (keine Klausur) nach der tatsächlichen
+  // Dauer. Beim Wieder-Öffnen (un-done) kein Dialog.
   function toggleTaskTimed(id) {
     const t = tasksApi.tasks.find((x) => x.id === id)
     const willComplete = t && !t.done
     tasksApi.toggleTask(id)
-    if (willComplete && t.area === 'study' && t.kind !== 'exam') {
+    if (willComplete && t.kind !== 'exam') {
       setTimingTask(t)
     }
   }
@@ -182,13 +180,15 @@ export default function AppShell({ session }) {
           editTask={tasksApi.editTask}
           toggleTask={toggleTaskTimed}
           removeTask={tasksApi.removeTask}
+          planForToday={tasksApi.planForToday}
+          unplanFromToday={tasksApi.unplanFromToday}
+          moveStatus={tasksApi.moveStatus}
           refresh={tasksApi.refresh}
           courses={coursesApi.courses}
           addCourse={coursesApi.addCourse}
           editCourse={coursesApi.editCourse}
           removeCourse={coursesApi.removeCourse}
           planPrefs={planPrefs}
-          focusArea={areaJump}
           focusCourse={courseJump}
         />
       )}
@@ -243,15 +243,7 @@ export default function AppShell({ session }) {
       )}
 
       {statsOpen && (
-        <StatsView
-          tasks={tasksApi.tasks}
-          onClose={() => setStatsOpen(false)}
-          onFilterArea={(area) => {
-            setAreaJump({ area, key: Date.now() })
-            setStatsOpen(false)
-            setView('today')
-          }}
-        />
+        <StatsView tasks={tasksApi.tasks} onClose={() => setStatsOpen(false)} />
       )}
 
       {timingTask && (

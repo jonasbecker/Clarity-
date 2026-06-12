@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Check, Repeat, Trash2, Flag, ListChecks, GripVertical, GraduationCap } from 'lucide-react'
-import { areas } from '../data/dummyData.js'
+import { Check, Repeat, Trash2, Flag, ListChecks, GripVertical, GraduationCap, CalendarPlus, Sun } from 'lucide-react'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
 import { subtaskProgress } from '../lib/subtasks.js'
 import { isExam } from '../lib/exams.js'
@@ -10,8 +9,13 @@ import { tap } from '../lib/haptics.js'
 // Eine Task-Zeile: abhaken (Kreis), bearbeiten (Titel antippen), löschen.
 // Zeigt optional Beschreibung (zweite Zeile) und Fälligkeit (Badge).
 //
-// Per Drag & Drop (Desktop) lässt sich die Karte am Griff in eine andere
-// Bereichs-Spalte ziehen; `onDragStart`/`onDragEnd`/`dragging` steuern das.
+// Optionale „Heute"-Steuerung: ist `onTogglePlan` gesetzt, erscheint ein
+// Sonne-/Plus-Knopf, der die Aufgabe auf den heutigen Plan zieht bzw. wieder
+// entfernt (`planned` zeigt den Zustand). Ist `onSetStatus` gesetzt, gibt es
+// einen „Dabei"-Umschalter (todo ↔ doing).
+//
+// Per Drag & Drop (Desktop) lässt sich die Karte am Griff verschieben;
+// `onDragStart`/`onDragEnd`/`dragging` steuern das.
 export default function TaskCard({
   task,
   onToggle,
@@ -21,11 +25,15 @@ export default function TaskCard({
   onDragEnd,
   dragging,
   courseById,
+  planned,
+  onTogglePlan,
+  onSetStatus,
 }) {
-  const area = areas[task.area]
-  // Zugeordneter Kurs (nur Studium). Fehlt der Kurs (z.B. gelöscht), einfach
-  // keinen Chip zeigen — kein Absturz.
+  // Zugeordneter Kurs. Fehlt er (z.B. gelöscht), einfach keinen Chip zeigen.
   const course = task.course_id ? courseById?.get(task.course_id) : null
+  // Akzentfarbe des Abhak-Kreises: Kursfarbe, sonst neutraler App-Akzent.
+  const accent = course?.color || 'var(--color-area-study)'
+  const doing = task.status === 'doing'
   // Beim Abhaken erst kurz die Animation zeigen, dann erst in der echten
   // Liste ändern — sonst verschwindet die Karte, bevor man den "Pop" sieht.
   const [pending, setPending] = useState(false)
@@ -85,8 +93,8 @@ export default function TaskCard({
           pending ? 'animate-check-pop' : ''
         }`}
         style={{
-          borderColor: area.color,
-          backgroundColor: done ? area.color : 'transparent',
+          borderColor: accent,
+          backgroundColor: done ? accent : 'transparent',
         }}
       >
         {done && <Check size={12} strokeWidth={3} className="text-white" />}
@@ -179,6 +187,41 @@ export default function TaskCard({
         >
           {dueLabel}
         </span>
+      )}
+
+      {/* „Dabei"-Umschalter (todo ↔ doing), nur für offene Aufgaben */}
+      {onSetStatus && !done && (
+        <button
+          type="button"
+          onClick={() => onSetStatus(task.id, doing ? 'todo' : 'doing')}
+          aria-pressed={doing}
+          aria-label={doing ? 'Nicht mehr dabei' : 'Als „dabei" markieren'}
+          className={`shrink-0 self-start rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ${
+            doing
+              ? 'border-ink bg-ink text-canvas'
+              : 'border-line text-ink-soft hover:border-ink/30'
+          }`}
+        >
+          Dabei
+        </button>
+      )}
+
+      {/* „Heute"-Knopf: auf den Tagesplan ziehen bzw. wieder entfernen (Veto) */}
+      {onTogglePlan && !done && (
+        <button
+          type="button"
+          onClick={() => onTogglePlan(task.id)}
+          aria-pressed={planned}
+          aria-label={planned ? 'Von heute entfernen' : 'Für heute einplanen'}
+          title={planned ? 'Von heute entfernen' : 'Für heute einplanen'}
+          className={`grid size-7 shrink-0 self-start place-items-center rounded-full border transition-colors ${
+            planned
+              ? 'border-ink bg-ink text-canvas'
+              : 'border-line text-ink-soft hover:border-ink/30'
+          }`}
+        >
+          {planned ? <Sun size={14} /> : <CalendarPlus size={14} />}
+        </button>
       )}
 
       <button

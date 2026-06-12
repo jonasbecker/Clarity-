@@ -7,14 +7,6 @@
 
 import { isoInDays } from '../lib/date.js'
 
-// Die drei Lebensbereiche. Die `accent`-Werte zeigen auf die CSS-Variablen
-// aus index.css, damit Farben an einer Stelle definiert sind.
-export const areas = {
-  study: { id: 'study', label: 'Studium', color: 'var(--color-area-study)' },
-  work: { id: 'work', label: 'Arbeit', color: 'var(--color-area-work)' },
-  private: { id: 'private', label: 'Privat', color: 'var(--color-area-private)' },
-}
-
 // Der Name für die Begrüßung.
 export const user = {
   name: 'Jonas',

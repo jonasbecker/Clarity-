@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, Trophy, Flame, Clock, CalendarDays, BarChart3, Gauge } from 'lucide-react'
-import { areas } from '../data/dummyData.js'
+import { X, Trophy, Flame, Clock, BarChart3, Gauge } from 'lucide-react'
 import { productivityStats } from '../lib/productivity.js'
 import { weekStats } from '../lib/stats.js'
 import BarChart from './BarChart.jsx'
@@ -14,9 +13,8 @@ const RANGES = [
 
 // Vollbild-Statistik: Mustererkennung aus erledigten Tasks (`completed_at`).
 // Folgt dem Overlay-Muster aus FocusMode (Escape schließt, Hintergrund
-// gesperrt). `onFilterArea(areaId)` (optional) schließt die Ansicht und
-// filtert die Task-Liste nach dem geklickten Bereich.
-export default function StatsView({ tasks, onClose, onFilterArea }) {
+// gesperrt).
+export default function StatsView({ tasks, onClose }) {
   const [weeks, setWeeks] = useState(12)
 
   useEffect(() => {
@@ -31,13 +29,6 @@ export default function StatsView({ tasks, onClose, onFilterArea }) {
 
   const stats = productivityStats(tasks, weeks)
   const week = weekStats(tasks)
-
-  const areaData = Object.entries(stats.byArea).map(([id, value]) => ({
-    id,
-    label: areas[id].label,
-    value,
-    color: areas[id].color,
-  }))
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-canvas">
@@ -88,19 +79,6 @@ export default function StatsView({ tasks, onClose, onFilterArea }) {
               <MetricCard icon={Flame} label="Aktuelle Serie" value={`${week.streak} Tage`} />
               <MetricCard icon={Clock} label="Beste Zeit" value={stats.bestTimeOfDay ?? '–'} />
             </div>
-
-            <section className="mb-8">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-sm font-semibold text-ink-soft">Erledigt pro Bereich</h3>
-                {onFilterArea && (
-                  <span className="text-xs text-ink-soft">tippen zum Filtern</span>
-                )}
-              </div>
-              <BarChart
-                data={areaData}
-                onSelect={onFilterArea ? (d) => onFilterArea(d.id) : undefined}
-              />
-            </section>
 
             <section className="mb-8">
               <h3 className="mb-3 text-sm font-semibold text-ink-soft">Produktivste Tageszeit</h3>

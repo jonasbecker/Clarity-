@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import Header from '../components/Header.jsx'
 import DayPlan from '../components/DayPlan.jsx'
 import TaskList from '../components/TaskList.jsx'
+import DoneToday from '../components/DoneToday.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import CourseModal from '../components/CourseModal.jsx'
@@ -22,12 +23,14 @@ import { weekStats } from '../lib/stats.js'
 import { toISODate } from '../lib/date.js'
 import { user, timeline } from '../data/dummyData.js'
 
-// Die "Heute-View" — Tagesplan, Fokus und die offenen Tasks.
+// Die „Heute"-Ansicht — der ephemere Tagesplan.
 //
-// Tasks und Kurse kommen jetzt als Props aus der App-Shell (damit der Hub und
-// „Heute" denselben State teilen); die Timeline aus useGoogleCalendar, „Fokus
-// heute" wird aus den echten Tasks abgeleitet. `focusArea`/`focusCourse` sind
-// Sprünge aus Statistik bzw. Studium-Hub, die die Liste vorfiltern.
+// „Heute" zeigt genau die Aufgaben, die bewusst auf den heutigen Tag gezogen
+// wurden (`planned_date === heute`) — per Sonne-Knopf an der Aufgabe oder (ab
+// Phase 3) per KI-Planung. Der Tagesplan (DayPlan) legt diese Aufgaben als
+// Zeitblöcke in die Arbeitsfenster. Darunter steht der gesamte Aufgaben-Pool,
+// aus dem man Aufgaben auf „Heute" zieht. Sind alle heutigen Aufgaben erledigt,
+// erscheint der Abschluss-Screen. `focusCourse` ist ein Sprung aus dem Hub.
 export default function TodayView({
   session,
   tasks,
@@ -37,13 +40,15 @@ export default function TodayView({
   editTask,
   toggleTask,
   removeTask,
+  planForToday,
+  unplanFromToday,
+  moveStatus,
   refresh,
   courses,
   addCourse,
   editCourse,
   removeCourse,
   planPrefs,
-  focusArea,
   focusCourse,
 }) {
   const calendar = useGoogleCalendar()
@@ -65,27 +70,37 @@ export default function TodayView({
   const [coursePick, setCoursePick] = useState(null)
   const searchInputRef = useRef(null)
 
-  // "Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
-  const openTasks = tasks.filter((t) => !t.done)
+  const todayISO = toISODate(new Date())
+
+  // Heute eingeplante Aufgaben: offen + heute schon erledigt.
+  const plannedAll = tasks.filter((t) => t.planned_date === todayISO)
+  const plannedOpen = plannedAll.filter((t) => !t.done)
+  const plannedDone = plannedAll.filter((t) => t.done)
+  // „Done for the Day": heute war etwas geplant und alles ist abgehakt.
+  const dayComplete = plannedAll.length > 0 && plannedOpen.length === 0
+  // Heute fokussiert gelernte Zeit (Ist-Zeit, sonst geschätzte Dauer).
+  const focusedMin = plannedDone.reduce(
+    (sum, t) => sum + (t.actual_min || t.duration_min || 0),
+    0,
+  )
+
+  // „Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
   const aiFocus =
     ai.status === 'ready' && ai.plan?.focus?.length
       ? ai.plan.focus
           .map((f) => {
-            const t = tasks.find((x) => x.id === f.id)
+            const t = plannedOpen.find((x) => x.id === f.id)
             return t ? { ...t, reason: f.reason } : null
           })
           .filter(Boolean)
       : null
-  const focus = aiFocus ?? selectFocusTasks(tasks)
+  const focus = aiFocus ?? selectFocusTasks(plannedOpen)
   const stats = weekStats(tasks)
 
-  const todayISO = toISODate(new Date())
-
-  // Tagesfortschritt: alle für heute fälligen Tasks (offen + heute erledigt).
-  const todayTasks = tasks.filter((t) => t.due_date === todayISO)
+  // Tagesfortschritt: heute eingeplante Aufgaben (erledigt / gesamt).
   const todayProgress = {
-    done: todayTasks.filter((t) => t.done).length,
-    total: todayTasks.length,
+    done: plannedDone.length,
+    total: plannedAll.length,
   }
 
   // Pull-to-Refresh (nur sinnvoll, wenn keine Overlays offen sind).
@@ -105,7 +120,7 @@ export default function TodayView({
   // (außerhalb der Arbeitszeit o.ä.), nehmen wir die "Fokus heute"-Auswahl.
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
   const { ordered: orderedPlan } = orderedPlanTasks(
-    openTasks,
+    plannedOpen,
     ai.plan,
     ai.status,
     planOrder.order,
@@ -136,6 +151,13 @@ export default function TodayView({
     setModalOpen(true)
   }
 
+  // Eine Aufgabe auf „Heute" ziehen oder wieder entfernen (Veto).
+  function togglePlan(id) {
+    const t = tasks.find((x) => x.id === id)
+    if (t?.planned_date === todayISO) unplanFromToday(id)
+    else planForToday(id)
+  }
+
   // Tastatur-Shortcuts (nur wenn weder Task- noch Kurs-/Fokus-Modal offen ist).
   useKeyboardShortcuts({
     enabled: !modalOpen && !focusOpen && !courseModalOpen,
@@ -143,20 +165,20 @@ export default function TodayView({
     onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
   })
-  // Speichern: bei vorhandener Task bearbeiten, sonst neu anlegen.
+  // Speichern: bei vorhandener Task bearbeiten, sonst neu anlegen. Neu im „+"
+  // angelegte Aufgaben landen direkt auf dem heutigen Plan.
   function handleSubmit(fields) {
     if (editing) editTask(editing.id, fields)
-    else addTask(fields)
+    else addTask({ ...fields, planned_date: todayISO })
   }
-  // Schnell-Hinzufügen aus einer Vorlage: legt sofort eine Task für heute an.
+  // Schnell-Hinzufügen aus einer Vorlage: legt sofort eine Aufgabe für heute an.
   function quickAdd(template) {
     addTask({
       title: template.title,
-      area: template.area,
       duration_min: template.duration_min,
       description: template.description ?? null,
       repeat: template.repeat ?? null,
-      due_date: todayISO,
+      planned_date: todayISO,
     })
   }
 
@@ -187,6 +209,11 @@ export default function TodayView({
       .forEach((t) => editTask(t.id, { course_id: null }))
   }
 
+  // Pool: alle offenen Aufgaben (zum Einplanen). Leerer Hinweis, wenn heute
+  // noch nichts geplant ist, aber Aufgaben im Pool warten.
+  const openCount = tasks.filter((t) => !t.done).length
+  const showPlanHint = !loading && plannedAll.length === 0 && openCount > 0
+
   return (
     <main className="mx-auto w-full max-w-3xl px-5 pb-28 pt-2 sm:px-8 sm:pt-4">
       <PullToRefresh
@@ -201,24 +228,35 @@ export default function TodayView({
         weekly={loading ? null : { total: stats.total, streak: stats.streak }}
       />
 
-      <DayPlan
-        tasks={openTasks}
-        loading={loading}
-        eventsByDate={eventsByDate}
-        calendarStatus={calendar.status}
-        onConnect={calendar.connect}
-        onToggle={toggleTask}
-        prefs={planPrefs}
-        ai={ai}
-        aiWeek={aiWeek}
-        summary={ai.status === 'ready' ? ai.plan?.summary : null}
-        onOptimize={() => ai.generate({ tasks: openTasks, events: todayEvents })}
-        planOrder={planOrder}
-      />
+      {dayComplete ? (
+        <DoneToday count={plannedDone.length} minutes={focusedMin} />
+      ) : (
+        <DayPlan
+          tasks={plannedOpen}
+          loading={loading}
+          eventsByDate={eventsByDate}
+          calendarStatus={calendar.status}
+          onConnect={calendar.connect}
+          onToggle={toggleTask}
+          prefs={planPrefs}
+          ai={ai}
+          aiWeek={aiWeek}
+          summary={ai.status === 'ready' ? ai.plan?.summary : null}
+          onOptimize={() => ai.generate({ tasks: plannedOpen, events: todayEvents })}
+          planOrder={planOrder}
+        />
+      )}
 
       {error && (
         <p className="mb-4 rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger">
           Fehler beim Laden: {error}
+        </p>
+      )}
+
+      {showPlanHint && (
+        <p className="mb-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-soft">
+          Noch nichts für heute geplant — tippe bei einer Aufgabe auf ☀, um sie
+          auf „Heute" zu ziehen.
         </p>
       )}
 
@@ -233,9 +271,10 @@ export default function TodayView({
         onEdit={openEdit}
         onDelete={removeTask}
         searchInputRef={searchInputRef}
-        focusArea={focusArea}
         courses={courses}
         focusCourse={focusCourse}
+        onTogglePlan={togglePlan}
+        onSetStatus={moveStatus}
       />
 
       <AddTaskButton onClick={openCreate} />
