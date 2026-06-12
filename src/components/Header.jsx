@@ -7,7 +7,9 @@ import ProgressRing from './ProgressRing.jsx'
 // zeigt den Abmelden-Knopf nur, wenn jemand eingeloggt ist.
 // `onOpenStudy`/`onOpenStats` (optional) öffnen Studium- bzw. Statistik-Ansicht.
 // `progress` (optional) zeigt den Tagesfortschritt als kleinen Ring.
-export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenStudy, onOpenStats, progress }) {
+// `weekly` (optional, { total, streak }) blendet die schlanke Wochenbilanz
+// gleich hier ein — eine eigene Karte dafür entfällt.
+export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenStudy, onOpenStats, progress, weekly }) {
   return (
     <header className="mb-8 flex items-start justify-between gap-4">
       <div>
@@ -20,11 +22,19 @@ export default function Header({ name, theme, onToggleTheme, onSignOut, onOpenSt
         {progress && (
           <div className="mt-3 flex items-center gap-3">
             <ProgressRing done={progress.done} total={progress.total} size={40} stroke={4} />
-            <p className="text-sm text-ink-soft">
-              {progress.total === 0
-                ? 'Keine Tasks für heute geplant'
-                : `${progress.done} von ${progress.total} heute erledigt`}
-            </p>
+            <div className="text-sm text-ink-soft">
+              <p>
+                {progress.total === 0
+                  ? 'Keine Tasks für heute geplant'
+                  : `${progress.done} von ${progress.total} heute erledigt`}
+              </p>
+              {weekly?.total > 0 && (
+                <p className="mt-0.5 text-xs">
+                  Diese Woche {weekly.total} erledigt
+                  {weekly.streak > 1 && <> · 🔥 {weekly.streak} Tage in Folge</>}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

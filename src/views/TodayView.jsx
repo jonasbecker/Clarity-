@@ -6,7 +6,6 @@ import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
-import WeekReview from '../components/WeekReview.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
@@ -196,9 +195,11 @@ export default function TodayView({
         active={pull.active}
       />
 
-      <Header name={user.name} progress={loading ? null : todayProgress} />
-
-      {!loading && <WeekReview stats={stats} />}
+      <Header
+        name={user.name}
+        progress={loading ? null : todayProgress}
+        weekly={loading ? null : { total: stats.total, streak: stats.streak }}
+      />
 
       <DayPlan
         tasks={openTasks}
@@ -233,10 +234,6 @@ export default function TodayView({
         onToggle={toggleTask}
         onEdit={openEdit}
         onDelete={removeTask}
-        onMoveArea={(id, area) => {
-          const t = tasks.find((x) => x.id === id)
-          if (t && t.area !== area) editTask(id, { area })
-        }}
         searchInputRef={searchInputRef}
         focusArea={focusArea}
         courses={courses}
