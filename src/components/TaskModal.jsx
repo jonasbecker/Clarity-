@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mic, Paperclip, Trash2, X, Plus, Tag } from 'lucide-react'
+import { Mic, Paperclip, Trash2, X, Plus, Tag, GraduationCap } from 'lucide-react'
 import { isoInDays } from '../lib/date.js'
 import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
@@ -13,7 +13,7 @@ import {
 } from '../lib/estimate.js'
 import { needsSplit, splitDuration } from '../lib/splitTask.js'
 import { isSupportedFile, extractText } from '../lib/fileText.js'
-import { CATEGORIES } from '../lib/operators.js'
+import { CATEGORIES, EVENT_TYPES } from '../lib/operators.js'
 import { useTaskAnalysis } from '../lib/useTaskAnalysis.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
@@ -69,6 +69,7 @@ export default function TaskModal({
   const [tags, setTags] = useState([]) // ["Uni", "dringend"]
   const [newTag, setNewTag] = useState('')
   const [category, setCategory] = useState('') // Aufgabentyp (als Tag gespeichert)
+  const [eventType, setEventType] = useState('') // Veranstaltungsart (als Tag gespeichert)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
   // Datei-Upload (optional): die KI schätzt daraus Dauer, Schwierigkeit & Art.
@@ -100,10 +101,15 @@ export default function TaskModal({
     const initialTags = Array.isArray(task?.tags) ? task.tags : []
     setTags(initialTags)
     setNewTag('')
-    // Kategorie aus den Tags ableiten (erster Tag aus CATEGORIES).
+    // Kategorie + Veranstaltungsart aus den Tags ableiten.
     setCategory(
       CATEGORIES.find((c) =>
         initialTags.some((t) => String(t).toLowerCase() === c.toLowerCase()),
+      ) ?? '',
+    )
+    setEventType(
+      EVENT_TYPES.find((e) =>
+        initialTags.some((t) => String(t).toLowerCase() === e.toLowerCase()),
       ) ?? '',
     )
     setSaveAsTemplate(false)
@@ -187,27 +193,45 @@ export default function TaskModal({
   }
 
   // KI-Analyse anstoßen — das Ergebnis erscheint als Vorschlags-Karte, die
-  // Formularfelder bleiben bis zum bewussten "Übernehmen" unverändert.
+  // Formularfelder bleiben bis zum bewussten "Übernehmen" unverändert. Ist
+  // noch kein Kurs gewählt, bekommt die KI die vorhandenen Fächer mit, um eines
+  // zuzuordnen; sonst dient der gewählte Kurs als Kontext.
   async function handleAnalyzeFile() {
     const courseName = courses.find((c) => c.id === courseId)?.name
-    await analysis.analyze({ title: trimmed, courseName, text: fileText })
+    await analysis.analyze({
+      title: trimmed,
+      courseName,
+      text: fileText,
+      courseNames: courseId ? [] : courses.map((c) => c.name),
+    })
   }
 
-  // Steht für die erkannte Kategorie eine gelernte Ist-Zeit zur Verfügung
-  // (z.B. "Rechenaufgabe" mit bisherigen actual_min), schlägt das die reine
-  // Text-/KI-Schätzung — du kennst deine eigene Geschwindigkeit am besten.
-  const durationFromHistory =
-    !!analysis.result?.category &&
-    hasCategoryEstimateBasis(analysis.result.category, courseId, tasks)
+  // Für die gelernte Dauer den effektiven Kurs nutzen: ein erkanntes Fach ist
+  // spezifischer als gar keiner.
+  const detectedCourseId = analysis.result?.course
+    ? courses.find((c) => c.name === analysis.result.course)?.id
+    : null
+  const effectiveCourseId = courseId || detectedCourseId || null
+
+  // Gelernte Dauer: zuerst die Veranstaltungsart-Historie (z.B. "Übung"),
+  // dann die Kategorie-Historie — beides aus deinen bisherigen Ist-Zeiten,
+  // bevorzugt im selben Fach. Sonst die KI-Schätzung.
+  const historyTag = analysis.result
+    ? [analysis.result.eventType, analysis.result.category].find(
+        (t) => t && hasCategoryEstimateBasis(t, effectiveCourseId, tasks),
+      )
+    : null
+  const durationFromHistory = !!historyTag
   const suggestedDuration = analysis.result
     ? durationFromHistory
-      ? estimateMinutesByCategory(analysis.result.category, courseId, tasks, analysis.result.duration_min)
+      ? estimateMinutesByCategory(historyTag, effectiveCourseId, tasks, analysis.result.duration_min)
       : analysis.result.duration_min
     : null
 
-  // Vorschlag übernehmen: Dauer (ggf. die gelernte), Priorität, Art und
-  // Kategorie setzen, Kurzfassung an die Beschreibung anhängen. Der
-  // Kategorie-Tag wird erst beim Speichern aus `category` konsolidiert.
+  // Vorschlag übernehmen: Dauer (ggf. die gelernte), Priorität, Art, Kategorie,
+  // Veranstaltungsart und — falls noch keiner gewählt — das erkannte Fach
+  // setzen; Kurzfassung an die Beschreibung anhängen. Die Tags werden erst
+  // beim Speichern aus `category`/`eventType` konsolidiert.
   function applySuggestion() {
     const res = analysis.result
     if (!res) return
@@ -216,6 +240,8 @@ export default function TaskModal({
     setPriority(res.priority)
     setKind(res.kind)
     if (res.category) setCategory(res.category)
+    if (res.eventType) setEventType(res.eventType)
+    if (!courseId && detectedCourseId) setCourseId(detectedCourseId)
     if (res.summary) {
       setDescription((cur) => (cur.trim() ? `${cur.trim()}\n\n${res.summary}` : res.summary))
     }
@@ -225,12 +251,13 @@ export default function TaskModal({
   function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
-    // Tags konsolidieren: alte Kategorie-Tags entfernen, ausgewählte ergänzen —
-    // so bleibt immer höchstens EINE Kategorie als Tag.
-    const baseTags = tags.filter(
-      (t) => !CATEGORIES.some((c) => c.toLowerCase() === String(t).toLowerCase()),
-    )
-    const finalTags = category ? addTag(baseTags, category) : baseTags
+    // Tags konsolidieren: alte Kategorie-/Veranstaltungsart-Tags entfernen,
+    // ausgewählte ergänzen — so bleibt immer höchstens EINE Kategorie und EINE
+    // Veranstaltungsart als Tag.
+    const managed = [...CATEGORIES, ...EVENT_TYPES].map((s) => s.toLowerCase())
+    const baseTags = tags.filter((t) => !managed.includes(String(t).toLowerCase()))
+    let finalTags = category ? addTag(baseTags, category) : baseTags
+    if (eventType) finalTags = addTag(finalTags, eventType)
     onSubmit({
       title: trimmed,
       area: 'study', // reiner Studienplaner — area bleibt intern 'study'
@@ -368,7 +395,7 @@ export default function TaskModal({
               </p>
               <p className="text-xs text-ink-soft">
                 {durationFromHistory
-                  ? `aus deinen bisherigen Zeiten für ${analysis.result.category}`
+                  ? `aus deinen bisherigen Zeiten für ${historyTag}`
                   : 'KI-Schätzung'}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -383,6 +410,18 @@ export default function TaskModal({
                   <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
                     <Tag size={11} />
                     {analysis.result.category}
+                  </span>
+                )}
+                {analysis.result.eventType && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
+                    <Tag size={11} />
+                    {analysis.result.eventType}
+                  </span>
+                )}
+                {!courseId && detectedCourseId && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft">
+                    <GraduationCap size={11} />
+                    {analysis.result.course}
                   </span>
                 )}
               </div>
@@ -620,6 +659,31 @@ export default function TaskModal({
                   }`}
                 >
                   {c}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Veranstaltungsart — wird als Tag gespeichert (filterbar) und
+              füttert die lernende Dauer-Schätzung. Erneutes Tippen wählt ab. */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Veranstaltungsart <span className="font-normal">(optional)</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {EVENT_TYPES.map((e) => {
+              const active = eventType === e
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setEventType(active ? '' : e)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  {e}
                 </button>
               )
             })}

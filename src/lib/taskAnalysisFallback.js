@@ -3,7 +3,12 @@
 // Text: Dauer (Minuten, 15er-Schritte), Schwierigkeit (→ Priorität), Art
 // (Aufgabe/Klausur) und Aufgabentyp-Kategorie (Operatoren-basiert).
 
-import { detectOperators, estimateCategory } from './operators.js'
+import {
+  detectOperators,
+  estimateCategory,
+  estimateEventType,
+  matchCourseName,
+} from './operators.js'
 
 const EXAM_WORDS = ['klausur', 'prüfung', 'exam', 'test']
 const HARD_WORDS = ['klausur', 'prüfung', 'abgabe', 'frist', 'deadline', 'beweis', 'projekt']
@@ -48,12 +53,14 @@ export function estimateSummary(text) {
   return sentence.slice(0, 150)
 }
 
-export function analyzeTaskFallback({ title = '', text = '' }) {
+export function analyzeTaskFallback({ title = '', text = '', courseNames = [] }) {
   return {
     duration_min: estimateDuration(text),
     priority: estimatePriority(title, text),
     kind: estimateKind(title, text),
     category: estimateCategory(title, text),
+    eventType: estimateEventType(title, text),
+    course: matchCourseName(title, text, courseNames),
     summary: estimateSummary(text),
   }
 }

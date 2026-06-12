@@ -78,3 +78,35 @@ export function estimateCategory(title, text) {
   if (apply > 0) return 'Anwendungsaufgabe'
   return 'Wissensfrage'
 }
+
+// Veranstaltungsart einer Uni-Veranstaltung — gleiche Liste wird in
+// api/analyzeTask.js als Whitelist für die KI-Antwort dupliziert. Wird wie die
+// Kategorie als Tag gespeichert (filterbar + lernende Dauer).
+export const EVENT_TYPES = ['Vorlesung', 'Übung', 'Seminar', 'Praktikum', 'Tutorium']
+
+// Schätzt die Veranstaltungsart aus Titel + Inhalt per Keyword-Heuristik.
+// Reihenfolge bewusst: spezifischere Begriffe zuerst. Substring-Treffer (nicht
+// \b, das vor Umlauten in JS nicht greift). Gibt '' zurück, wenn nichts
+// Eindeutiges erkennbar ist.
+export function estimateEventType(title, text) {
+  const h = `${title} ${text}`.toLowerCase()
+  const has = (...needles) => needles.some((n) => h.includes(n))
+  if (has('tutorium', 'tutor')) return 'Tutorium'
+  if (has('praktikum', 'labor', 'versuch')) return 'Praktikum'
+  if (has('seminar', 'hausarbeit', 'referat')) return 'Seminar'
+  if (has('übung', 'aufgabenblatt')) return 'Übung'
+  if (has('vorlesung', 'skript', 'mitschrift') || /\bvl\b/.test(h)) return 'Vorlesung'
+  return ''
+}
+
+// Findet den ersten Kursnamen, der (case-insensitive) als Teilstring im
+// Titel+Text vorkommt — deterministische Fach-Zuordnung ohne KI.
+export function matchCourseName(title, text, courseNames = []) {
+  const haystack = `${title} ${text}`.toLowerCase()
+  for (const name of courseNames) {
+    const n = String(name || '').trim().toLowerCase()
+    if (n && haystack.includes(n)) return name
+  }
+  return null
+}
+

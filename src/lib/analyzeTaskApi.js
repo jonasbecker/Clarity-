@@ -1,10 +1,10 @@
 // Ruft unsere Server-Funktion /api/analyzeTask auf (KI-Aufgaben-Analyse).
 // Wie bei dayPlanApi.js spricht die Komponente nie direkt mit Groq.
-export async function fetchTaskAnalysis({ title, courseName, text }) {
+export async function fetchTaskAnalysis({ title, courseName, text, courseNames }) {
   const res = await fetch('/api/analyzeTask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, courseName, text }),
+    body: JSON.stringify({ title, courseName, text, courseNames }),
   })
 
   if (!res.ok) {

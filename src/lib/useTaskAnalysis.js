@@ -13,18 +13,21 @@ export function useTaskAnalysis() {
   const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'ready'
   const [result, setResult] = useState(null) // { duration_min, priority, kind, summary, source }
 
-  async function analyze({ title, courseName, text }) {
+  async function analyze({ title, courseName, text, courseNames = [] }) {
     setStatus('loading')
     try {
-      const data = await fetchTaskAnalysis({ title, courseName, text })
+      const data = await fetchTaskAnalysis({ title, courseName, text, courseNames })
       if (data.duration_min == null && data.priority == null && data.kind == null) {
         throw new Error('leer')
       }
-      const fallback = analyzeTaskFallback({ title, text })
+      const fallback = analyzeTaskFallback({ title, text, courseNames })
       const res = {
         duration_min: data.duration_min ?? fallback.duration_min,
         priority: data.priority ?? fallback.priority,
         kind: data.kind ?? fallback.kind,
+        category: data.category ?? fallback.category,
+        eventType: data.eventType ?? fallback.eventType,
+        course: data.course ?? fallback.course,
         summary: data.summary || fallback.summary,
         source: 'ki',
       }
@@ -32,7 +35,7 @@ export function useTaskAnalysis() {
       setStatus('ready')
       return res
     } catch {
-      const res = { ...analyzeTaskFallback({ title, text }), source: 'auto' }
+      const res = { ...analyzeTaskFallback({ title, text, courseNames }), source: 'auto' }
       setResult(res)
       setStatus('ready')
       return res
