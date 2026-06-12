@@ -9,13 +9,15 @@ import { supabase } from './supabase.js'
 //
 // Die Tabelle heißt "tasks" und hat die Spalten:
 //   id, user_id, title, area, due_date, description, repeat, duration_min,
-//   done, completed_at, inserted_at
+//   done, completed_at, planned_date, inserted_at
 // (siehe supabase/schema.sql). user_id wird von der DB automatisch auf den
 // eingeloggten Nutzer gesetzt — wir müssen ihn nie selbst mitschicken.
+// `area` ist seit dem Studium-Fokus immer 'study' (reiner Studienplaner) und
+// bleibt nur aus Abwärtskompatibilität in der Tabelle.
 
 const TABLE = 'tasks'
 const COLS =
-  'id, title, area, due_date, description, repeat, duration_min, actual_min, done, completed_at, priority, subtasks, tags, course_id, kind, status'
+  'id, title, area, due_date, description, repeat, duration_min, actual_min, done, completed_at, priority, subtasks, tags, course_id, kind, status, planned_date'
 
 // Alle Tasks des eingeloggten Nutzers, neueste zuerst.
 export async function fetchTasks() {
@@ -28,10 +30,12 @@ export async function fetchTasks() {
 }
 
 // Neue Task anlegen und die fertige Zeile (mit id) zurückgeben.
+// `area` ist im reinen Studienplaner immer 'study' (NOT-NULL-Spalte) und wird
+// hier als Vorgabe gesetzt, falls der Aufrufer keinen Wert mitschickt.
 export async function createTask(fields) {
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ ...fields, done: false })
+    .insert({ area: 'study', ...fields, done: false })
     .select(COLS)
     .single()
   if (error) throw error

@@ -162,6 +162,13 @@ alter table public.tasks drop constraint if exists tasks_status_check;
 alter table public.tasks add constraint tasks_status_check
   check (status in ('todo', 'doing', 'done'));
 
+-- Tages-Plan: an welchem Tag die Aufgabe bewusst auf "Heute" gezogen wurde.
+-- `planned_date = heute` ⇒ die Aufgabe steht im heutigen Plan. Offene Aufgaben
+-- aus der Vergangenheit werden beim Laden zurückgesetzt ("Clean Slate", kein
+-- Rollover): jeder Tag startet als leeres Blatt. `due_date` bleibt davon
+-- unberührt und bedeutet nur noch eine harte Deadline (Klausur/Zieltermin).
+alter table public.tasks add column if not exists planned_date date;
+
 -- ----------------------------------------------------------------------
 -- Studium-Hub: zusätzliche Felder am Kurs.
 --   links    = Array { label, url } für Moodle/Skript/Kursraum
@@ -170,6 +177,11 @@ alter table public.tasks add constraint tasks_status_check
 alter table public.courses add column if not exists links jsonb not null default '[]';
 alter table public.courses add column if not exists lectures jsonb not null default '[]';
 alter table public.courses add column if not exists archived boolean not null default false;
+
+-- Manuelles Zieldatum für Kurse ohne offizielle Klausur (z.B. Abgabetermin
+-- oder selbstgesetztes Lernziel). Speist die Pace-Rückwärtsplanung, wenn der
+-- Kurs keine eigene Klausur-Aufgabe (kind='exam') mit Datum hat.
+alter table public.courses add column if not exists target_date date;
 
 -- ----------------------------------------------------------------------
 -- Hausarbeiten-Manager: Recherche-Quellen für Haus-/Abschlussarbeiten.

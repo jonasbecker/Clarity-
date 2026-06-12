@@ -6,10 +6,11 @@ import { supabase } from './supabase.js'
 //
 // Spalten der Tabelle "courses":
 //   id, user_id, name, color, semester, ects, grade, links, lectures,
-//   archived, inserted_at
+//   archived, target_date, inserted_at
 
 const TABLE = 'courses'
-const COLS = 'id, name, color, semester, ects, grade, links, lectures, archived'
+const COLS =
+  'id, name, color, semester, ects, grade, links, lectures, archived, target_date'
 
 // Alle Kurse des eingeloggten Nutzers, älteste zuerst (stabile Reihenfolge).
 export async function fetchCourses() {

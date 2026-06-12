@@ -2,11 +2,25 @@ import { useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured } from './supabase.js'
 import { fetchTasks, createTask, updateTask, deleteTask } from './tasks.js'
 import { nextDueDate } from './repeat.js'
+import { toISODate } from './date.js'
 import { openTasks as demoTasks } from '../data/dummyData.js'
 
 // Wie lange nach dem Löschen Zeit zum Rückgängigmachen bleibt, bevor die
 // Task wirklich aus der Datenbank verschwindet.
 const UNDO_DELAY = 5000
+
+// „Clean Slate": offene Aufgaben, die an einem vergangenen Tag auf „Heute"
+// gezogen wurden, fallen lautlos zurück in den Kurs-Pool (kein Rollover). Wir
+// bereinigen das beim Laden — der Free-Tier hat keinen nächtlichen Cron-Job,
+// daher ist ein Lade-Check der einzige kostenlose Weg. Erledigte Aufgaben
+// behalten ihr planned_date (für die Tagesbilanz „heute gelernt").
+function clearStalePlans(list, todayISO) {
+  return list.map((t) =>
+    !t.done && t.planned_date && t.planned_date < todayISO
+      ? { ...t, planned_date: null }
+      : t,
+  )
+}
 
 // Eigener Hook (custom hook): bündelt die gesamte Task-Logik an einer
 // Stelle. Die TodayView ruft `useTasks()` auf und bekommt fertige Daten +
@@ -31,19 +45,26 @@ export function useTasks(session) {
   useEffect(() => {
     let active = true
 
+    const todayISO = toISODate(new Date())
+
     if (!isSupabaseConfigured) {
       setTasks(
-        demoTasks.map((t) => ({
-          priority: 'medium',
-          subtasks: [],
-          tags: [],
-          kind: 'task',
-          course_id: null,
-          status: 'todo',
-          actual_min: null,
-          ...t,
-          done: false,
-        })),
+        clearStalePlans(
+          demoTasks.map((t) => ({
+            priority: 'medium',
+            subtasks: [],
+            tags: [],
+            kind: 'task',
+            course_id: null,
+            status: 'todo',
+            actual_min: null,
+            area: 'study',
+            planned_date: null,
+            ...t,
+            done: false,
+          })),
+          todayISO,
+        ),
       )
       setLoading(false)
       return
@@ -56,7 +77,10 @@ export function useTasks(session) {
 
     setLoading(true)
     fetchTasks()
-      .then((data) => active && (setTasks(data), setError(null)))
+      .then(
+        (data) =>
+          active && (setTasks(clearStalePlans(data, todayISO)), setError(null)),
+      )
       .catch((e) => active && setError(e.message))
       .finally(() => active && setLoading(false))
 
@@ -72,7 +96,7 @@ export function useTasks(session) {
     if (!isSupabaseConfigured || !session) return
     try {
       const data = await fetchTasks()
-      setTasks(data)
+      setTasks(clearStalePlans(data, toISODate(new Date())))
       setError(null)
     } catch (e) {
       setError(e.message)
@@ -82,7 +106,7 @@ export function useTasks(session) {
   async function addTask(fields) {
     if (!isSupabaseConfigured) {
       setTasks((prev) => [
-        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, status: 'todo', actual_min: null, ...fields },
+        { id: crypto.randomUUID(), done: false, priority: 'medium', subtasks: [], tags: [], kind: 'task', course_id: null, status: 'todo', actual_min: null, area: 'study', planned_date: null, ...fields },
         ...prev,
       ])
       return
@@ -175,6 +199,31 @@ export function useTasks(session) {
     editTask(id, changes)
   }
 
+  // Eine Aufgabe bewusst auf den heutigen Plan ziehen (planned_date = heute).
+  function planForToday(id) {
+    editTask(id, { planned_date: toISODate(new Date()) })
+  }
+
+  // Manuelles Veto: Aufgabe wieder aus „Heute" entfernen. Sie bleibt offen und
+  // wandert zurück in den Kurs-Pool.
+  function unplanFromToday(id) {
+    editTask(id, { planned_date: null })
+  }
+
+  // KI-/Bulk-Auswahl: setzt den heutigen Plan auf genau diese Aufgaben. Bereits
+  // erledigte heutige Aufgaben bleiben unberührt (ihre Bilanz zählt weiter);
+  // offene, nicht mehr gewählte fallen aus dem Plan.
+  function planManyForToday(ids) {
+    const todayISO = toISODate(new Date())
+    const wanted = new Set(ids)
+    tasks.forEach((t) => {
+      if (t.done) return
+      const planned = t.planned_date === todayISO
+      if (wanted.has(t.id) && !planned) editTask(t.id, { planned_date: todayISO })
+      else if (!wanted.has(t.id) && planned) editTask(t.id, { planned_date: null })
+    })
+  }
+
   // Löscht erst nur visuell — die Task wirklich aus der DB zu entfernen
   // passiert verzögert in `finalizeDelete`, damit `undoDelete` sie in der
   // Zwischenzeit zurückholen kann.
@@ -227,6 +276,9 @@ export function useTasks(session) {
     editTask,
     toggleTask,
     moveStatus,
+    planForToday,
+    unplanFromToday,
+    planManyForToday,
     removeTask,
     pendingDelete,
     undoDelete,
