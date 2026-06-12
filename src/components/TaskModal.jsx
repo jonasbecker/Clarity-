@@ -13,6 +13,7 @@ import {
 } from '../lib/estimate.js'
 import { needsSplit, splitDuration } from '../lib/splitTask.js'
 import { isSupportedFile, extractText } from '../lib/fileText.js'
+import { CATEGORIES } from '../lib/operators.js'
 import { useTaskAnalysis } from '../lib/useTaskAnalysis.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
@@ -67,6 +68,7 @@ export default function TaskModal({
   const [newSubtask, setNewSubtask] = useState('')
   const [tags, setTags] = useState([]) // ["Uni", "dringend"]
   const [newTag, setNewTag] = useState('')
+  const [category, setCategory] = useState('') // Aufgabentyp (als Tag gespeichert)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
 
   // Datei-Upload (optional): die KI schätzt daraus Dauer, Schwierigkeit & Art.
@@ -95,8 +97,15 @@ export default function TaskModal({
     setPriority(task?.priority ?? 'medium')
     setSubtasks(Array.isArray(task?.subtasks) ? task.subtasks : [])
     setNewSubtask('')
-    setTags(Array.isArray(task?.tags) ? task.tags : [])
+    const initialTags = Array.isArray(task?.tags) ? task.tags : []
+    setTags(initialTags)
     setNewTag('')
+    // Kategorie aus den Tags ableiten (erster Tag aus CATEGORIES).
+    setCategory(
+      CATEGORIES.find((c) =>
+        initialTags.some((t) => String(t).toLowerCase() === c.toLowerCase()),
+      ) ?? '',
+    )
     setSaveAsTemplate(false)
     setFileName(null)
     setFileText('')
@@ -197,7 +206,8 @@ export default function TaskModal({
     : null
 
   // Vorschlag übernehmen: Dauer (ggf. die gelernte), Priorität, Art und
-  // Kategorie (als Tag) setzen, Kurzfassung an die Beschreibung anhängen.
+  // Kategorie setzen, Kurzfassung an die Beschreibung anhängen. Der
+  // Kategorie-Tag wird erst beim Speichern aus `category` konsolidiert.
   function applySuggestion() {
     const res = analysis.result
     if (!res) return
@@ -205,7 +215,7 @@ export default function TaskModal({
     setDurationTouched(true)
     setPriority(res.priority)
     setKind(res.kind)
-    if (res.category) setTags((cur) => addTag(cur, res.category))
+    if (res.category) setCategory(res.category)
     if (res.summary) {
       setDescription((cur) => (cur.trim() ? `${cur.trim()}\n\n${res.summary}` : res.summary))
     }
@@ -215,6 +225,12 @@ export default function TaskModal({
   function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
+    // Tags konsolidieren: alte Kategorie-Tags entfernen, ausgewählte ergänzen —
+    // so bleibt immer höchstens EINE Kategorie als Tag.
+    const baseTags = tags.filter(
+      (t) => !CATEGORIES.some((c) => c.toLowerCase() === String(t).toLowerCase()),
+    )
+    const finalTags = category ? addTag(baseTags, category) : baseTags
     onSubmit({
       title: trimmed,
       area: 'study', // reiner Studienplaner — area bleibt intern 'study'
@@ -226,7 +242,7 @@ export default function TaskModal({
       duration_min: duration,
       priority,
       subtasks,
-      tags,
+      tags: finalTags,
     })
     // Beim Anlegen optional als Vorlage merken (ohne Fälligkeit).
     if (!isEdit && saveAsTemplate && onSaveTemplate) {
@@ -579,6 +595,31 @@ export default function TaskModal({
                   }`}
                 >
                   {p.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Aufgabentyp / Kategorie — wird als Tag gespeichert und füttert die
+              kategorie-basierte Lernschätzung. Erneutes Tippen wählt ab. */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Aufgabentyp <span className="font-normal">(optional)</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => {
+              const active = category === c
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategory(active ? '' : c)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-ink bg-ink text-canvas'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  {c}
                 </button>
               )
             })}
