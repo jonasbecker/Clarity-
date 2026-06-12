@@ -3,6 +3,8 @@ import ChoreList from '../components/ChoreList.jsx'
 import StudyPlanner from '../components/StudyPlanner.jsx'
 import { getGreeting, formatLongDate, formatDueLabel } from '../lib/date.js'
 import { upcomingExams } from '../lib/exams.js'
+import { formatDuration } from '../lib/scheduler.js'
+import { usePaceCalculator } from '../lib/usePaceCalculator.js'
 import {
   weightedAverage,
   totalEcts,
@@ -17,6 +19,21 @@ function countdown(days) {
   if (days === 0) return 'heute'
   if (days === 1) return 'morgen'
   return `in ${days} Tagen`
+}
+
+// Kompaktes Zieldatum für die Pace-Zeile, z.B. „12. Juli".
+function shortDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
+    new Date(y, m - 1, d),
+  )
+}
+
+// Dezente, sachliche Pace-Zeile auf der Kurskarte.
+function paceLabel(pace) {
+  if (!pace) return null
+  if (pace.overdue) return `Ziel ${shortDate(pace.targetDate)} überfällig`
+  return `≈ ${formatDuration(pace.minutesPerDay)}/Tag bis ${shortDate(pace.targetDate)}`
 }
 
 // Der Studium-Hub: die neue Startseite. Zeigt Kennzahlen, anstehende
@@ -39,6 +56,7 @@ export default function StudyHub({
   onRemoveChore,
 }) {
   const active = courses.filter((c) => !c.archived)
+  const paceByCourse = usePaceCalculator(active, tasks)
   const exams = upcomingExams(tasks, active)
   const avg = weightedAverage(active)
   const earned = earnedEcts(active)
@@ -165,6 +183,7 @@ export default function StudyHub({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {active.map((c) => {
                   const open = openByCourse.get(c.id) || 0
+                  const pace = paceLabel(paceByCourse.get(c.id))
                   return (
                     <button
                       key={c.id}
@@ -187,6 +206,15 @@ export default function StudyHub({
                         <span className="mt-1 block text-xs text-ink-soft">
                           {open > 0 ? `${open} offene Aufgabe${open === 1 ? '' : 'n'}` : 'Keine offenen Aufgaben'}
                         </span>
+                        {pace && (
+                          <span
+                            className={`mt-1 block text-xs ${
+                              paceByCourse.get(c.id)?.overdue ? 'text-danger' : 'text-ink-soft'
+                            }`}
+                          >
+                            {pace}
+                          </span>
+                        )}
                       </span>
                       <ChevronRight
                         size={16}
