@@ -291,6 +291,7 @@ export default function CourseDetail({
         onSubmit={handleTaskSubmit}
         onDelete={onDeleteTask}
         courses={courses}
+        tasks={tasks}
         preselectCourse={taskPick}
       />
     </div>

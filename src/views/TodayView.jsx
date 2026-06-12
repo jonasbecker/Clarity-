@@ -273,6 +273,7 @@ export default function TodayView({
         onDelete={removeTask}
         onSaveTemplate={addTemplate}
         courses={courses}
+        tasks={tasks}
         onManageCourse={(course) => openCourseModal(course, true)}
         preselectCourse={coursePick}
       />

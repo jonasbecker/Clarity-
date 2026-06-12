@@ -14,6 +14,7 @@ import Archive from './Archive.jsx'
 import Papers from './Papers.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
+import ActualTimeModal from '../components/ActualTimeModal.jsx'
 import StatsView from '../components/StatsView.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import OfflineBanner from '../components/OfflineBanner.jsx'
@@ -61,6 +62,9 @@ export default function AppShell({ session }) {
   // Klicks denselben Filter erneut auslösen.
   const [areaJump, setAreaJump] = useState(null)
   const [courseJump, setCourseJump] = useState(null)
+  // Beim Abhaken einer Lernaufgabe kurz nach der tatsächlichen Dauer fragen
+  // (füttert die lernende Schätzung). Hält die gerade erledigte Aufgabe.
+  const [timingTask, setTimingTask] = useState(null)
 
   const detailCourse = detailCourseId
     ? coursesApi.courses.find((c) => c.id === detailCourseId) ?? null
@@ -91,6 +95,18 @@ export default function AppShell({ session }) {
     )
     if (!ok) return
     active.forEach((c) => coursesApi.editCourse(c.id, { archived: true }))
+  }
+
+  // Abhaken mit Zeiterfassung: schaltet wie gewohnt um und fragt anschließend
+  // bei frisch erledigten Lernaufgaben (Studium, keine Klausur) nach der
+  // tatsächlichen Dauer. Beim Wieder-Öffnen (un-done) kein Dialog.
+  function toggleTaskTimed(id) {
+    const t = tasksApi.tasks.find((x) => x.id === id)
+    const willComplete = t && !t.done
+    tasksApi.toggleTask(id)
+    if (willComplete && t.area === 'study' && t.kind !== 'exam') {
+      setTimingTask(t)
+    }
   }
 
   // Hub-Kachel öffnet die Fach-Detailseite.
@@ -157,7 +173,7 @@ export default function AppShell({ session }) {
           error={tasksApi.error}
           addTask={tasksApi.addTask}
           editTask={tasksApi.editTask}
-          toggleTask={tasksApi.toggleTask}
+          toggleTask={toggleTaskTimed}
           removeTask={tasksApi.removeTask}
           refresh={tasksApi.refresh}
           courses={coursesApi.courses}
@@ -170,7 +186,7 @@ export default function AppShell({ session }) {
       )}
 
       {view === 'env' && (
-        <LearningEnv tasks={tasksApi.tasks} onToggle={tasksApi.toggleTask} />
+        <LearningEnv tasks={tasksApi.tasks} onToggle={toggleTaskTimed} />
       )}
 
       {view === 'archive' && (
@@ -201,7 +217,7 @@ export default function AppShell({ session }) {
           onUpdateCourse={coursesApi.editCourse}
           onAddTask={tasksApi.addTask}
           onEditTask={tasksApi.editTask}
-          onToggleTask={tasksApi.toggleTask}
+          onToggleTask={toggleTaskTimed}
           onDeleteTask={tasksApi.removeTask}
           onMoveStatus={tasksApi.moveStatus}
           onOpenInToday={openCourseInToday}
@@ -227,6 +243,17 @@ export default function AppShell({ session }) {
             setStatsOpen(false)
             setView('today')
           }}
+        />
+      )}
+
+      {timingTask && (
+        <ActualTimeModal
+          task={timingTask}
+          onSave={(actualMin) => {
+            tasksApi.editTask(timingTask.id, { actual_min: actualMin })
+            setTimingTask(null)
+          }}
+          onSkip={() => setTimingTask(null)}
         />
       )}
 

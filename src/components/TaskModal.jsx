@@ -6,6 +6,7 @@ import { useSpeech } from '../lib/useSpeech.js'
 import { addSubtask, toggleSubtask, removeSubtask } from '../lib/subtasks.js'
 import { addTag, removeTag } from '../lib/tags.js'
 import { REPEAT_PRESETS, WEEKDAYS, parseDays, buildDaysRepeat } from '../lib/repeat.js'
+import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
 
 // Geschätzte Dauer (Minuten) — der Tagesplan platziert die Task entsprechend.
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -40,6 +41,7 @@ export default function TaskModal({
   onSaveTemplate,
   task,
   courses = [],
+  tasks = [],
   onManageCourse,
   preselectCourse,
 }) {
@@ -53,6 +55,7 @@ export default function TaskModal({
   const [repeat, setRepeat] = useState(null) // siehe lib/repeat.js
   const [customDays, setCustomDays] = useState(false) // Wochentag-Auswahl offen?
   const [duration, setDuration] = useState(30) // geschätzte Dauer in Minuten
+  const [durationTouched, setDurationTouched] = useState(false) // selbst gewählt?
   const [priority, setPriority] = useState('medium') // 'low' | 'medium' | 'high'
   const [subtasks, setSubtasks] = useState([]) // [{ id, title, done }]
   const [newSubtask, setNewSubtask] = useState('')
@@ -75,6 +78,7 @@ export default function TaskModal({
     setRepeat(task?.repeat ?? null)
     setCustomDays(typeof task?.repeat === 'string' && task.repeat.startsWith('days:'))
     setDuration(task?.duration_min ?? 30)
+    setDurationTouched(isEdit) // bestehende Dauer nicht überschreiben
     setPriority(task?.priority ?? 'medium')
     setSubtasks(Array.isArray(task?.subtasks) ? task.subtasks : [])
     setNewSubtask('')
@@ -88,6 +92,16 @@ export default function TaskModal({
   useEffect(() => {
     if (preselectCourse?.id) setCourseId(preselectCourse.id)
   }, [preselectCourse])
+
+  // Lernende Schätzung: bei einer NEUEN Studium-Aufgabe die Dauer aus den
+  // bisherigen Ist-Zeiten ähnlicher Aufgaben vorschlagen — solange du sie nicht
+  // selbst gewählt hast. Aktualisiert sich live beim Tippen des Titels.
+  const estimate = estimateMinutes(title, courseId, tasks)
+  const fromEstimate =
+    !isEdit && area === 'study' && title.trim() && hasEstimateBasis(title, courseId, tasks)
+  useEffect(() => {
+    if (!isEdit && area === 'study' && !durationTouched) setDuration(estimate)
+  }, [estimate, isEdit, area, durationTouched])
 
   // Escape schließt + Hintergrund-Scrollen sperren, solange offen.
   useEffect(() => {
@@ -371,7 +385,12 @@ export default function TaskModal({
 
           {/* Dauer (für den Tagesplan) */}
           <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
-            Dauer <span className="font-normal">(für den Tagesplan)</span>
+            Dauer{' '}
+            <span className="font-normal">
+              {fromEstimate && !durationTouched
+                ? '(geschätzt aus deinen Zeiten)'
+                : '(für den Tagesplan)'}
+            </span>
           </p>
           <div className="flex flex-wrap gap-2">
             {DURATIONS.map((d) => {
@@ -381,7 +400,10 @@ export default function TaskModal({
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setDuration(d)}
+                  onClick={() => {
+                    setDuration(d)
+                    setDurationTouched(true)
+                  }}
                   className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                     active
                       ? 'border-ink bg-ink text-canvas'
