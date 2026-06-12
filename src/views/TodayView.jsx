@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import Header from '../components/Header.jsx'
 import FocusSection from '../components/FocusSection.jsx'
 import DayPlan from '../components/DayPlan.jsx'
+import StudyPlanner from '../components/StudyPlanner.jsx'
 import TaskList from '../components/TaskList.jsx'
 import AddTaskButton from '../components/AddTaskButton.jsx'
 import TaskModal from '../components/TaskModal.jsx'
@@ -211,6 +212,16 @@ export default function TodayView({
         onGenerate={() => ai.generate({ tasks: openTasks, events: todayEvents })}
         onStartFocus={() => setFocusOpen(true)}
       />
+
+      {!loading && (
+        <StudyPlanner
+          tasks={tasks}
+          courses={courses}
+          prefs={planPrefs}
+          eventsByDate={eventsByDate}
+          onEditTask={editTask}
+        />
+      )}
 
       <DayPlan
         tasks={openTasks}
