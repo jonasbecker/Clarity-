@@ -13,11 +13,12 @@ import {
 } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import { SkeletonLine } from './Skeleton.jsx'
+import WorkHoursEditor from './WorkHoursEditor.jsx'
 import { areas } from '../data/dummyData.js'
 import { useCollapsible } from '../lib/useCollapsible.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
-import { isoInDays, formatDueLabel } from '../lib/date.js'
+import { isoInDays, formatDueLabel, weekdayInDays } from '../lib/date.js'
 import { buildAiWeek, freeMinutes } from '../lib/weekPlan.js'
 import {
   buildSchedule,
@@ -63,6 +64,16 @@ export default function DayPlan({
     (_, d) => eventsByDate[isoInDays(d)] || [],
   )
 
+  // Arbeitszeit-Fenster je Tag-Offset aus den Wochentag-Einstellungen ableiten.
+  // null = arbeitsfreier Tag. windowForWeekday liefert {start,end}; der
+  // Scheduler erwartet {workStart,workEnd}, daher hier umbenennen.
+  const windowForOffset = (d) => {
+    const w = prefs.windowForWeekday?.(weekdayInDays(d))
+    return w ? { workStart: w.start, workEnd: w.end } : null
+  }
+  const dayWindows = Array.from({ length: dayCount }, (_, d) => windowForOffset(d))
+  const todayWindow = dayWindows[0] // Fenster für heute (oder null = frei)
+
   // Reihenfolge: KI/Heuristik, überschrieben von deiner manuellen Reihenfolge.
   // Geteilte Logik mit dem Fokus-Modus (lib/planTasks.js).
   const { ordered, aiActive } = orderedPlanTasks(
@@ -95,11 +106,14 @@ export default function DayPlan({
   // KI um eine Wochen-Verteilung bitten: jeder Tag mit seiner freien Kapazität.
   const planWeek = () => {
     if (!aiWeek) return
-    const daysPayload = dayEvents.map((events, d) => ({
-      day: d,
-      label: formatDueLabel(isoInDays(d)) || 'Heute',
-      frei_min: freeMinutes(events, prefs.workStart, prefs.workEnd),
-    }))
+    const daysPayload = dayEvents.map((events, d) => {
+      const win = dayWindows[d]
+      return {
+        day: d,
+        label: formatDueLabel(isoInDays(d)) || 'Heute',
+        frei_min: win ? freeMinutes(events, win.workStart, win.workEnd) : 0,
+      }
+    })
     aiWeek.generate({ tasks: ordered, days: daysPayload })
   }
 
@@ -161,26 +175,9 @@ export default function DayPlan({
 
       {open && (
         <>
-          {/* Arbeitszeit-Fenster + Ansicht-Umschalter */}
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-            <span>Arbeitszeit</span>
-            <input
-              type="time"
-              value={prefs.workStart}
-              onChange={(e) => prefs.setWorkStart(e.target.value)}
-              aria-label="Arbeitsbeginn"
-              className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
-            />
-            <span>–</span>
-            <input
-              type="time"
-              value={prefs.workEnd}
-              onChange={(e) => prefs.setWorkEnd(e.target.value)}
-              aria-label="Arbeitsende"
-              className="rounded-lg border border-line bg-surface px-2 py-1 text-ink outline-none focus:border-ink/30"
-            />
-
-            <div className="ml-auto inline-flex rounded-full border border-line p-0.5">
+          {/* Ansicht-Umschalter Heute/Woche */}
+          <div className="mb-3 flex justify-end">
+            <div className="inline-flex rounded-full border border-line p-0.5">
               {[
                 { id: 'today', label: 'Heute' },
                 { id: 'week', label: 'Woche' },
@@ -189,7 +186,7 @@ export default function DayPlan({
                   key={v.id}
                   type="button"
                   onClick={() => setView(v.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                     view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink'
                   }`}
                 >
@@ -199,22 +196,32 @@ export default function DayPlan({
             </div>
           </div>
 
+          {/* Arbeitszeiten je Wochentag */}
+          <WorkHoursEditor prefs={prefs} />
+
           {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
 
           {view === 'today' ? (
-            <TodayPlan
-              ordered={ordered}
-              events={todayEvents}
-              prefs={prefs}
-              nowMin={nowMin}
-              seq={seq}
-              onToggle={onToggle}
-              onMove={move}
-              tasksCount={tasks.length}
-              draggedId={draggedId}
-              setDraggedId={setDraggedId}
-              handleDrop={handleDrop}
-            />
+            !todayWindow ? (
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
+                <PartyPopper size={20} />
+                <p>Heute ist ein arbeitsfreier Tag — nichts eingeplant. Genieß ihn!</p>
+              </div>
+            ) : (
+              <TodayPlan
+                ordered={ordered}
+                events={todayEvents}
+                window={todayWindow}
+                nowMin={nowMin}
+                seq={seq}
+                onToggle={onToggle}
+                onMove={move}
+                tasksCount={tasks.length}
+                draggedId={draggedId}
+                setDraggedId={setDraggedId}
+                handleDrop={handleDrop}
+              />
+            )
           ) : (
             <>
               {/* KI-Wochenplanung: verteilt die Tasks proaktiv auf die Tage */}
@@ -251,6 +258,7 @@ export default function DayPlan({
               <WeekPlan
                 ordered={ordered}
                 dayEvents={dayEvents}
+                dayWindows={dayWindows}
                 prefs={prefs}
                 nowMin={nowMin}
                 seq={seq}
@@ -284,7 +292,7 @@ export default function DayPlan({
 function TodayPlan({
   ordered,
   events,
-  prefs,
+  window: win,
   nowMin,
   seq,
   onToggle,
@@ -297,8 +305,8 @@ function TodayPlan({
   const { blocks, unscheduled } = buildSchedule({
     tasks: ordered,
     events,
-    workStart: prefs.workStart,
-    workEnd: prefs.workEnd,
+    workStart: win.workStart,
+    workEnd: win.workEnd,
     now: nowMin,
   })
 
@@ -394,6 +402,7 @@ function TodayPlan({
 function WeekPlan({
   ordered,
   dayEvents,
+  dayWindows,
   prefs,
   nowMin,
   seq,
@@ -408,6 +417,7 @@ function WeekPlan({
       ? buildAiWeek({
           ordered,
           dayEvents,
+          dayWindows,
           assignments,
           workStart: prefs.workStart,
           workEnd: prefs.workEnd,
@@ -417,6 +427,7 @@ function WeekPlan({
       : buildWeek({
           tasks: ordered,
           dayEvents,
+          dayWindows,
           workStart: prefs.workStart,
           workEnd: prefs.workEnd,
           dayCount,

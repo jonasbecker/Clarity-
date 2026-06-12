@@ -137,10 +137,16 @@ export function buildSchedule({ tasks = [], events = [], workStart = '09:00', wo
 // des jeweiligen Tages (aus Google Kalender) — fehlen sie, plant der Tag
 // gegen das volle Arbeitszeit-Fenster.
 //
+// `dayWindows[d]` (optional) gibt je Tag ein eigenes Fenster
+// `{ workStart, workEnd }` vor — oder `null` für „kein Arbeitstag" (dann wird
+// an dem Tag nichts geplant, alles rutscht weiter). Fehlt der Eintrag, gilt
+// das globale workStart/workEnd.
+//
 // Rückgabe: { days: [{ offset, events, blocks }], unscheduled }
 export function buildWeek({
   tasks = [],
   dayEvents = [],
+  dayWindows = null,
   workStart = '09:00',
   workEnd = '18:00',
   dayCount = 5,
@@ -150,11 +156,20 @@ export function buildWeek({
   let remaining = tasks
   for (let d = 0; d < dayCount; d++) {
     const events = dayEvents[d] || []
+    // Fenster dieses Tages bestimmen. `dayWindows[d] === null` = arbeitsfrei.
+    const win =
+      dayWindows && d in dayWindows
+        ? dayWindows[d]
+        : { workStart, workEnd }
+    if (!win) {
+      days.push({ offset: d, events, blocks: [], off: true })
+      continue
+    }
     const { blocks, unscheduled } = buildSchedule({
       tasks: remaining,
       events,
-      workStart,
-      workEnd,
+      workStart: win.workStart,
+      workEnd: win.workEnd,
       now: d === 0 ? now : null,
     })
     days.push({ offset: d, events, blocks })

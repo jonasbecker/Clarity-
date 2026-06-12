@@ -35,6 +35,13 @@ export function isoInDays(n) {
   return toISODate(d)
 }
 
+// Wochentag (JS getDay(): 0 = So … 6 = Sa) n Tage von heute aus.
+export function weekdayInDays(n) {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return d.getDay()
+}
+
 // ISO-Datum + n Tage (für wiederkehrende Tasks: nächste Fälligkeit).
 export function addDaysToISO(iso, n) {
   const [y, m, d] = iso.split('-').map(Number)

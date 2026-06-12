@@ -34,6 +34,7 @@ export function buildAiWeek({
   ordered,
   dayEvents = [],
   assignments = [],
+  dayWindows = null,
   workStart = '09:00',
   workEnd = '18:00',
   dayCount = 5,
@@ -53,12 +54,20 @@ export function buildAiWeek({
   let carry = [] // was am Vortag nicht mehr reinpasste
   for (let d = 0; d < dayCount; d++) {
     const events = dayEvents[d] || []
+    const win =
+      dayWindows && d in dayWindows ? dayWindows[d] : { workStart, workEnd }
+    // Arbeitsfreier Tag: alles auf den nächsten Tag übertragen.
+    if (!win) {
+      days.push({ offset: d, events, blocks: [], off: true })
+      carry = [...carry, ...buckets[d]]
+      continue
+    }
     // Übertrag zuerst (dringlicher), dann die für heute geplanten Tasks.
     const { blocks, unscheduled } = buildSchedule({
       tasks: [...carry, ...buckets[d]],
       events,
-      workStart,
-      workEnd,
+      workStart: win.workStart,
+      workEnd: win.workEnd,
       now: d === 0 ? now : null,
     })
     days.push({ offset: d, events, blocks })

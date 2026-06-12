@@ -113,11 +113,17 @@ export default function TodayView({
     ai.status,
     planOrder.order,
   )
+  // Heutiges Arbeitszeit-Fenster (oder arbeitsfrei → leerer Plan, dann greift
+  // die „Fokus heute"-Auswahl).
+  const todayWin = planPrefs.windowForWeekday?.(new Date().getDay()) ?? {
+    start: planPrefs.workStart,
+    end: planPrefs.workEnd,
+  }
   const planFocus = buildSchedule({
     tasks: orderedPlan,
     events: todayEvents,
-    workStart: planPrefs.workStart,
-    workEnd: planPrefs.workEnd,
+    workStart: todayWin?.start ?? planPrefs.workStart,
+    workEnd: todayWin?.end ?? planPrefs.workEnd,
     now: nowMin,
   })
     .blocks.filter((b) => b.end > nowMin)
