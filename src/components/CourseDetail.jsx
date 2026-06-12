@@ -18,6 +18,9 @@ import TaskModal from './TaskModal.jsx'
 import { useCoach } from '../lib/useCoach.js'
 import { formatGrade } from '../lib/grades.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
+import { buildSeries, seriesCount } from '../lib/series.js'
+import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
+import { Layers } from 'lucide-react'
 
 const TABS = [
   { id: 'inhalt', label: 'Inhalt' },
@@ -52,6 +55,7 @@ export default function CourseDetail({
   const [taskModalOpen, setTaskModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [taskPick, setTaskPick] = useState(null)
+  const [seriesOpen, setSeriesOpen] = useState(false)
   const coach = useCoach()
 
   useEffect(() => {
@@ -191,25 +195,50 @@ export default function CourseDetail({
 
         {tab === 'aufgaben' && (
           <section>
-            <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-ink-soft">Lernaufgaben</h3>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => onOpenInToday(course.id)}
-                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
                 >
                   In „Heute" <ArrowUpRight size={13} />
                 </button>
                 <button
                   type="button"
+                  onClick={() => setSeriesOpen((o) => !o)}
+                  aria-pressed={seriesOpen}
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    seriesOpen
+                      ? 'border-ink text-ink'
+                      : 'border-line text-ink-soft hover:border-ink/30'
+                  }`}
+                >
+                  <Layers size={13} /> Serie
+                </button>
+                <button
+                  type="button"
                   onClick={openNewTask}
-                  className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-xs font-medium text-canvas transition-opacity hover:opacity-90"
+                  className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-canvas transition-opacity hover:opacity-90"
                 >
                   <Plus size={13} /> Aufgabe
                 </button>
               </div>
             </div>
+
+            {seriesOpen && (
+              <SeriesForm
+                course={course}
+                tasks={tasks}
+                onCreate={(items) => {
+                  items.forEach((it) => onAddTask(it))
+                  setSeriesOpen(false)
+                }}
+                onCancel={() => setSeriesOpen(false)}
+              />
+            )}
+
             {courseTasks.length === 0 ? (
               <EmptyHint icon={ListTodo} text="Noch keine Aufgaben — leg deine erste an." />
             ) : (
@@ -265,6 +294,146 @@ export default function CourseDetail({
         preselectCourse={taskPick}
       />
     </div>
+  )
+}
+
+// Serien-Generator: aus „Aufgabenblatt" + von/bis viele durchnummerierte
+// Aufgaben auf einmal anlegen, alle auf diesen Kurs gebucht. Die Dauer wird
+// aus deinen bisherigen Ist-Zeiten ähnlicher Aufgaben vorgeschlagen (sofern
+// vorhanden) — du kannst sie überschreiben. Mobil-freundlich: große Felder,
+// alles gestapelt.
+const SERIES_DURATIONS = [15, 30, 45, 60, 90, 120]
+
+function SeriesForm({ course, tasks, onCreate, onCancel }) {
+  const [base, setBase] = useState('')
+  const [from, setFrom] = useState(1)
+  const [to, setTo] = useState(5)
+  const [duration, setDuration] = useState(30)
+  const [durationTouched, setDurationTouched] = useState(false)
+
+  // Dauer-Vorschlag aus den bisherigen Ist-Zeiten, solange du sie nicht selbst
+  // angefasst hast. Aktualisiert sich live, während du den Titel tippst.
+  const suggested = estimateMinutes(base, course.id, tasks)
+  const fromEstimate = base.trim() && hasEstimateBasis(base, course.id, tasks)
+  useEffect(() => {
+    if (!durationTouched) setDuration(suggested)
+  }, [suggested, durationTouched])
+
+  const count = base.trim() ? seriesCount(from, to) : 0
+  const lo = Math.min(Number(from), Number(to))
+  const hi = lo + count - 1
+
+  function submit(e) {
+    e.preventDefault()
+    const items = buildSeries({
+      base,
+      from,
+      to,
+      courseId: course.id,
+      durationMin: duration,
+    })
+    if (items.length > 0) onCreate(items)
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="mb-4 rounded-2xl border border-line bg-surface p-4"
+    >
+      <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+        <Layers size={15} className="text-ink-soft" />
+        Aufgaben-Serie anlegen
+      </p>
+
+      <input
+        type="text"
+        value={base}
+        onChange={(e) => setBase(e.target.value)}
+        autoFocus
+        placeholder="Basistitel, z.B. Aufgabenblatt"
+        className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+      />
+
+      <div className="mt-2 flex items-center gap-2">
+        <label className="flex flex-1 items-center gap-2 text-sm text-ink-soft">
+          von
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="w-full min-w-0 rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-ink/30"
+          />
+        </label>
+        <label className="flex flex-1 items-center gap-2 text-sm text-ink-soft">
+          bis
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="w-full min-w-0 rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-ink/30"
+          />
+        </label>
+      </div>
+
+      {/* Dauer je Aufgabe */}
+      <p className="mb-1.5 mt-3 text-xs font-medium text-ink-soft">
+        Dauer je Aufgabe
+        {fromEstimate && !durationTouched && (
+          <span className="ml-1 font-normal">· geschätzt aus deinen Zeiten</span>
+        )}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {SERIES_DURATIONS.map((d) => {
+          const active = duration === d
+          const label = d < 60 ? `${d} Min` : d === 60 ? '1 Std' : `${d / 60} Std`
+          return (
+            <button
+              key={d}
+              type="button"
+              onClick={() => {
+                setDuration(d)
+                setDurationTouched(true)
+              }}
+              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                active
+                  ? 'border-ink bg-ink text-canvas'
+                  : 'border-line text-ink-soft hover:border-ink/30'
+              }`}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Vorschau */}
+      <p className="mt-3 text-xs text-ink-soft">
+        {count > 0
+          ? `Legt ${count} Aufgabe${count === 1 ? '' : 'n'} an: „${base.trim()} ${lo}" … „${base.trim()} ${hi}"`
+          : 'Gib einen Basistitel ein.'}
+      </p>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="submit"
+          disabled={count === 0}
+          className="flex-1 rounded-xl bg-ink py-2.5 text-sm font-medium text-canvas transition-opacity disabled:opacity-40"
+        >
+          {count > 0 ? `${count} Aufgaben anlegen` : 'Aufgaben anlegen'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30"
+        >
+          Abbrechen
+        </button>
+      </div>
+    </form>
   )
 }
 
