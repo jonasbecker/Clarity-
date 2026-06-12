@@ -168,6 +168,22 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   **Archiv**. Archivierte Kurse verschwinden aus Hub und Notenspiegel, bleiben im
   Bereich „Archiv" aber mitsamt Notizen und Aufgaben abrufbar und lassen sich
   jederzeit reaktivieren.
+- **Arbeitszeiten je Wochentag**: im Tagesplan lässt sich pro Wochentag (Mo–So)
+  ein eigenes Arbeitsfenster setzen oder ein Tag ganz freigeben — mit Schnellknopf
+  „Mo–Fr gleich setzen". Der Scheduler plant nur in diese Fenster.
+- **Serien-Aufgaben**: auf der Fach-Detailseite legt „Serie" mit einem Basistitel
+  und von/bis viele durchnummerierte Aufgaben auf einmal an („Aufgabenblatt 1…n"),
+  alle direkt auf den Kurs gebucht.
+- **„Schlau einplanen"**: ein Knopf im Tagesplan verteilt deine offenen
+  Lernaufgaben deadline-bewusst über die nächsten Tage in deine Arbeitszeiten —
+  die mit der nächsten Klausur zuerst — und trägt sie als Datum in den Kalender
+  ein. Was nicht mehr vor die Klausur passt, wird gemeldet. Klausurtermine selbst
+  bleiben unberührt (sie sind die Fristen).
+- **Lernende Zeitschätzung**: beim Abhaken einer Lernaufgabe fragt Clarity kurz
+  nach der tatsächlichen Dauer. Aus diesen Ist-Zeiten schätzt es die Dauer neuer,
+  ähnlicher Aufgaben (gleicher Kurs + Titel-Kern, z.B. weitere „Aufgabenblätter")
+  und schlägt sie im Formular und im Serien-Generator vor — so wird der Plan mit
+  der Zeit immer realistischer.
 - **Allgemeine To-Dos**: eine schlanke, studiumsfremde Checkliste im Studium-Hub
   (Mensakarte aufladen usw.) — anlegen, abhaken, löschen.
 - **Hausarbeiten-Manager**: im Bereich „Hausarbeiten" sammelst du Recherche-
@@ -281,3 +297,4 @@ läuft (nicht im Browser).
 | 6 ✅  | Onboarding, Statistik/Mustererkennung |
 | 7 ✅  | Studium: Kurse/Module, Klausuren mit Lernfortschritt, Notenspiegel (ECTS), Studium-Dashboard |
 | 8 ✅  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |
+| 9 ✅  | Lernplaner: Arbeitszeiten je Wochentag, Serien-Aufgaben, „Schlau einplanen" (deadline-bewusst um Klausuren herum), lernende Zeitschätzung aus Ist-Zeiten |
