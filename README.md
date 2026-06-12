@@ -174,11 +174,12 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Serien-Aufgaben**: auf der Fach-Detailseite legt „Serie" mit einem Basistitel
   und von/bis viele durchnummerierte Aufgaben auf einmal an („Aufgabenblatt 1…n"),
   alle direkt auf den Kurs gebucht.
-- **„Schlau einplanen"**: ein Knopf im Tagesplan verteilt deine offenen
-  Lernaufgaben deadline-bewusst über die nächsten Tage in deine Arbeitszeiten —
-  die mit der nächsten Klausur zuerst — und trägt sie als Datum in den Kalender
-  ein. Was nicht mehr vor die Klausur passt, wird gemeldet. Klausurtermine selbst
-  bleiben unberührt (sie sind die Fristen).
+- **„Schlau einplanen"**: ein Knopf im **Studium-Hub** (direkt unter den
+  Klausuren) verteilt deine offenen Lernaufgaben deadline-bewusst über die
+  nächsten Tage in deine Arbeitszeiten — die mit der nächsten Klausur zuerst —
+  und trägt sie als Datum in den Kalender ein. Was nicht mehr vor die Klausur
+  passt, wird gemeldet. Klausurtermine selbst bleiben unberührt (sie sind die
+  Fristen).
 - **Lernende Zeitschätzung**: beim Abhaken einer Lernaufgabe fragt Clarity kurz
   nach der tatsächlichen Dauer. Aus diesen Ist-Zeiten schätzt es die Dauer neuer,
   ähnlicher Aufgaben (gleicher Kurs + Titel-Kern, z.B. weitere „Aufgabenblätter")
@@ -298,3 +299,4 @@ läuft (nicht im Browser).
 | 7 ✅  | Studium: Kurse/Module, Klausuren mit Lernfortschritt, Notenspiegel (ECTS), Studium-Dashboard |
 | 8 ✅  | Studium-Hub als Startseite, Fach-Detailseiten, Lernaufgaben-Kanban, KI-Studiencoach, Lernumgebung (Pomodoro/Sounds), Archiv, Hausarbeiten |
 | 9 ✅  | Lernplaner: Arbeitszeiten je Wochentag, Serien-Aufgaben, „Schlau einplanen" (deadline-bewusst um Klausuren herum), lernende Zeitschätzung aus Ist-Zeiten |
+| 10 ✅ | „Heute" neu strukturiert (schlanker, ein Tagesplan-Block mit Fokus + KI), „Schlau einplanen" in den Studium-Hub verschoben |
