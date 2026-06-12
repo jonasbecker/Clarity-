@@ -8,10 +8,13 @@ import TaskModal from '../components/TaskModal.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import FocusMode from '../components/FocusMode.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
+import HoursModal from '../components/HoursModal.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
+import { Sparkles, LifeBuoy } from 'lucide-react'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
+import { useDayPlan } from '../lib/useDayPlan.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
 import { useTemplates } from '../lib/useTemplates.js'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts.js'
@@ -42,6 +45,7 @@ export default function TodayView({
   removeTask,
   planForToday,
   unplanFromToday,
+  planManyForToday,
   moveStatus,
   refresh,
   courses,
@@ -54,6 +58,7 @@ export default function TodayView({
   const calendar = useGoogleCalendar()
   const ai = useAiPlan()
   const aiWeek = useAiWeek()
+  const dayPlan = useDayPlan()
   const planOrder = usePlanOrder()
   const { templates, addTemplate, removeTemplate } = useTemplates(session)
 
@@ -61,6 +66,8 @@ export default function TodayView({
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
+  // Tages-Pop-up: null | 'plan' (Morgen-Call) | 'rescue' (Rette meinen Tag).
+  const [hoursMode, setHoursMode] = useState(null)
   // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
   // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
   // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
@@ -158,6 +165,21 @@ export default function TodayView({
     else planForToday(id)
   }
 
+  // KI-Planung (Morgen-Call) bzw. „Rette meinen Tag": die KI/Heuristik wählt
+  // aus dem Aufgaben-Pool die Aufgaben, die ins Zeitbudget passen, und setzt
+  // sie auf „Heute". Überschreibt die offene heutige Auswahl.
+  const activeCourses = courses.filter((c) => !c.archived)
+  async function runDayPlan(minutes) {
+    const pool = tasks.filter((t) => !t.done && t.kind !== 'exam')
+    const res = await dayPlan.generate({
+      availableMinutes: minutes,
+      courses: activeCourses,
+      tasks: pool,
+    })
+    planManyForToday(res.ids)
+    setHoursMode(null)
+  }
+
   // Tastatur-Shortcuts (nur wenn weder Task- noch Kurs-/Fokus-Modal offen ist).
   useKeyboardShortcuts({
     enabled: !modalOpen && !focusOpen && !courseModalOpen,
@@ -227,6 +249,38 @@ export default function TodayView({
         progress={loading ? null : todayProgress}
         weekly={loading ? null : { total: stats.total, streak: stats.streak }}
       />
+
+      {/* Tages-Planung: KI/Heuristik füllt „Heute" anhand deiner Zeit. */}
+      {!loading && !dayComplete && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setHoursMode('plan')}
+            className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-medium text-canvas transition-transform active:scale-95"
+          >
+            <Sparkles size={15} />
+            KI-Planung
+          </button>
+          {plannedOpen.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setHoursMode('rescue')}
+              className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30"
+            >
+              <LifeBuoy size={15} />
+              Rette meinen Tag
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* KI-Tagesüberblick, wenn die Auswahl von der KI kam. */}
+      {dayPlan.result?.summary && (
+        <p className="mb-6 flex items-start gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
+          <Sparkles size={15} className="mt-0.5 shrink-0 text-area-study" />
+          <span>{dayPlan.result.summary}</span>
+        </p>
+      )}
 
       {dayComplete ? (
         <DoneToday count={plannedDone.length} minutes={focusedMin} />
@@ -307,6 +361,24 @@ export default function TodayView({
           onClose={() => setFocusOpen(false)}
         />
       )}
+
+      <HoursModal
+        open={hoursMode !== null}
+        title={
+          hoursMode === 'rescue'
+            ? 'Rette meinen Tag'
+            : 'Wie viel Zeit hast du heute?'
+        }
+        hint={
+          hoursMode === 'rescue'
+            ? 'Wie viel Zeit hast du noch? Clarity plant „Heute" neu.'
+            : 'Clarity bündelt deine Aufgaben fokussiert in dieses Zeitbudget.'
+        }
+        confirmLabel={hoursMode === 'rescue' ? 'Neu planen' : 'Tag planen'}
+        loading={dayPlan.status === 'loading'}
+        onConfirm={runDayPlan}
+        onClose={() => setHoursMode(null)}
+      />
     </main>
   )
 }

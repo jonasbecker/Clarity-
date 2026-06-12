@@ -182,6 +182,7 @@ export default function AppShell({ session }) {
           removeTask={tasksApi.removeTask}
           planForToday={tasksApi.planForToday}
           unplanFromToday={tasksApi.unplanFromToday}
+          planManyForToday={tasksApi.planManyForToday}
           moveStatus={tasksApi.moveStatus}
           refresh={tasksApi.refresh}
           courses={coursesApi.courses}
