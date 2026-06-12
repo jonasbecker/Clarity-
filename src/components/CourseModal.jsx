@@ -26,6 +26,7 @@ export default function CourseModal({ open, course, onClose, onSubmit, onDelete 
   const [semester, setSemester] = useState('')
   const [ects, setEcts] = useState('') // als String im Eingabefeld
   const [grade, setGrade] = useState('') // deutsche Note 1.0–5.0 oder leer
+  const [targetDate, setTargetDate] = useState('') // manuelles Lernziel (ISO) oder leer
 
   useEffect(() => {
     if (!open) return
@@ -34,6 +35,7 @@ export default function CourseModal({ open, course, onClose, onSubmit, onDelete 
     setSemester(course?.semester ?? '')
     setEcts(course?.ects != null ? String(course.ects) : '')
     setGrade(course?.grade != null ? String(course.grade) : '')
+    setTargetDate(course?.target_date ?? '')
   }, [open, course])
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function CourseModal({ open, course, onClose, onSubmit, onDelete 
       semester: semester.trim() || null,
       ects: Number.isFinite(ectsNum) ? ectsNum : null,
       grade: Number.isFinite(gradeNum) ? gradeNum : null,
+      target_date: targetDate || null,
     })
     onClose()
   }
@@ -170,6 +173,20 @@ export default function CourseModal({ open, course, onClose, onSubmit, onDelete 
               />
             </div>
           </div>
+
+          {/* Zieldatum (für die Pace-Planung, falls keine Klausur existiert) */}
+          <p className="mb-2 mt-5 text-sm font-medium text-ink-soft">
+            Zieldatum <span className="font-normal">(optional)</span>
+          </p>
+          <input
+            type="date"
+            value={targetDate}
+            onChange={(e) => setTargetDate(e.target.value)}
+            className="w-full rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm outline-none transition-colors focus:border-ink/30"
+          />
+          <p className="mt-1.5 text-xs text-ink-soft">
+            Lernziel für die Pace-Planung, falls der Kurs keine Klausur hat.
+          </p>
 
           {/* Absenden */}
           <button

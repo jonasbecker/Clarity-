@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   Archive as ArchiveIcon,
-  BookText,
   CalendarDays,
   GraduationCap,
   Timer,
@@ -11,7 +10,6 @@ import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
 import LearningEnv from './LearningEnv.jsx'
 import Archive from './Archive.jsx'
-import Papers from './Papers.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import ActualTimeModal from '../components/ActualTimeModal.jsx'
@@ -23,8 +21,6 @@ import Onboarding from '../components/Onboarding.jsx'
 import Toast from '../components/Toast.jsx'
 import { useTasks } from '../lib/useTasks.js'
 import { useCourses } from '../lib/useCourses.js'
-import { usePapers } from '../lib/usePapers.js'
-import { useChores } from '../lib/useChores.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { useTheme } from '../lib/useTheme.js'
 import { useNotifications } from '../lib/useNotifications.js'
@@ -36,8 +32,8 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { user } from '../data/dummyData.js'
 
 // Die App-Shell hält die bereichsübergreifend geteilten Daten (Tasks, Kurse,
-// Quellen, To-Dos, Theme) an EINER Stelle und reicht sie an die einzelnen
-// Bereiche (Studium-Hub, Heute, …) als Props durch. So teilen sich alle
+// Theme) an EINER Stelle und reicht sie an die einzelnen Bereiche
+// (Studium-Hub, Heute, …) als Props durch. So teilen sich alle
 // Ansichten denselben Task-State — Änderungen im Hub und in „Heute" bleiben
 // konsistent. Die Navigation läuft ohne Router über einen einfachen
 // `view`-State.
@@ -47,10 +43,8 @@ import { user } from '../data/dummyData.js'
 export default function AppShell({ session }) {
   const tasksApi = useTasks(session)
   const coursesApi = useCourses(session)
-  const papersApi = usePapers(session)
-  const choresApi = useChores(session)
-  // Arbeitszeit-Einstellungen liegen in der Shell, damit Studium-Hub
-  // („Schlau einplanen") und „Heute" (Tagesplan) dieselben Fenster nutzen.
+  // Arbeitszeit-Einstellungen liegen in der Shell, damit „Heute" (Tagesplan)
+  // die Wochentags-Fenster nutzen kann.
   const planPrefs = usePlanPrefs()
   const { theme, toggle: toggleTheme } = useTheme()
   const notifications = useNotifications(tasksApi.tasks, tasksApi.loading)
@@ -84,7 +78,6 @@ export default function AppShell({ session }) {
     { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
     { id: 'env', label: 'Lernen', icon: Timer },
-    { id: 'papers', label: 'Hausarbeiten', icon: BookText },
     { id: 'archive', label: 'Archiv', icon: ArchiveIcon },
   ]
 
@@ -159,14 +152,8 @@ export default function AppShell({ session }) {
           name={user.name}
           tasks={tasksApi.tasks}
           courses={coursesApi.courses}
-          planPrefs={planPrefs}
-          onEditTask={tasksApi.editTask}
           onOpenCourse={openCourse}
           onEndSemester={endSemester}
-          chores={choresApi.chores}
-          onAddChore={choresApi.addChore}
-          onToggleChore={(id, done) => choresApi.editChore(id, { done })}
-          onRemoveChore={choresApi.removeChore}
         />
       )}
 
@@ -203,16 +190,6 @@ export default function AppShell({ session }) {
           courses={coursesApi.courses}
           tasks={tasksApi.tasks}
           onOpenCourse={openCourse}
-        />
-      )}
-
-      {view === 'papers' && (
-        <Papers
-          papers={papersApi.papers}
-          courses={coursesApi.courses}
-          onAdd={papersApi.addPaper}
-          onEdit={papersApi.editPaper}
-          onRemove={papersApi.removePaper}
         />
       )}
 

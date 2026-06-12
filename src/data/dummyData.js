@@ -62,18 +62,6 @@ export const courses = [
   },
 ]
 
-// Hausarbeiten-Manager: Beispiel-Recherchequellen.
-export const papers = [
-  { id: 'p1', title: 'Bayessche Statistik in der Praxis', author: 'Müller, TU München', course_id: 'c1', url: 'https://example.org/bayes', status: 'to_read' },
-  { id: 'p2', title: 'Normalisierung relationaler Datenbanken', author: 'Codd', course_id: 'c2', url: 'https://example.org/normalisierung', status: 'read' },
-]
-
-// Allgemeine To-Dos: studiumsfremde Checkliste.
-export const chores = [
-  { id: 'ch1', title: 'Mensakarte aufladen', done: false },
-  { id: 'ch2', title: 'Semesterticket verlängern', done: false },
-]
-
 // Kalender-Termine für die Timeline. `start`/`end` sind 24h-Zeiten als
 // String — bewusst simpel gehalten.
 export const timeline = [

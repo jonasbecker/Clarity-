@@ -1,6 +1,4 @@
 import { Award, CalendarClock, GraduationCap, Layers, ChevronRight } from 'lucide-react'
-import ChoreList from '../components/ChoreList.jsx'
-import StudyPlanner from '../components/StudyPlanner.jsx'
 import { getGreeting, formatLongDate, formatDueLabel } from '../lib/date.js'
 import { upcomingExams } from '../lib/exams.js'
 import { formatDuration } from '../lib/scheduler.js'
@@ -46,14 +44,8 @@ export default function StudyHub({
   name,
   tasks,
   courses,
-  planPrefs,
-  onEditTask,
   onOpenCourse,
   onEndSemester,
-  chores,
-  onAddChore,
-  onToggleChore,
-  onRemoveChore,
 }) {
   const active = courses.filter((c) => !c.archived)
   const paceByCourse = usePaceCalculator(active, tasks)
@@ -156,17 +148,6 @@ export default function StudyHub({
             </section>
           )}
 
-          {/* „Schlau einplanen": verteilt offene Lernaufgaben deadline-bewusst
-              in die Arbeitszeiten — hier direkt neben den Klausuren. */}
-          {planPrefs && onEditTask && (
-            <StudyPlanner
-              tasks={tasks}
-              courses={active}
-              prefs={planPrefs}
-              onEditTask={onEditTask}
-            />
-          )}
-
           {/* Kurs-Galerie */}
           {active.length > 0 && (
             <section className="mb-8">
@@ -255,16 +236,6 @@ export default function StudyHub({
           )}
         </>
       )}
-
-      {/* Allgemeine To-Dos — unabhängig vom Studium, immer sichtbar */}
-      <div className="mt-8">
-        <ChoreList
-          chores={chores}
-          onAdd={onAddChore}
-          onToggle={onToggleChore}
-          onRemove={onRemoveChore}
-        />
-      </div>
     </main>
   )
 }

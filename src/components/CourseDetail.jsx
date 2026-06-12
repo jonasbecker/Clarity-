@@ -18,8 +18,10 @@ import TaskModal from './TaskModal.jsx'
 import { useCoach } from '../lib/useCoach.js'
 import { formatGrade } from '../lib/grades.js'
 import { formatDueLabel, isOverdue } from '../lib/date.js'
+import { formatDuration } from '../lib/scheduler.js'
 import { buildSeries, seriesCount } from '../lib/series.js'
 import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
+import { paceFor } from '../lib/pace.js'
 import { Layers } from 'lucide-react'
 
 const TABS = [
@@ -27,6 +29,14 @@ const TABS = [
   { id: 'aufgaben', label: 'Aufgaben' },
   { id: 'termine', label: 'Termine' },
 ]
+
+// Kompaktes Zieldatum (z.B. „12. Juli") für die Pace-Zeile.
+function shortDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
+    new Date(y, m - 1, d),
+  )
+}
 
 // Fach-Detailseite: eigene Vollbild-Ansicht je Kurs. Kopf mit Eckdaten,
 // wichtige Links und Vorlesungsnotizen (Akkordeon) im Tab "Inhalt", die
@@ -83,6 +93,8 @@ export default function CourseDetail({
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
 
   const color = course.color || 'var(--color-area-study)'
+  // Dezente Pace-Rückwärtsplanung (nötige Minuten/Lerntag bis zum Ziel).
+  const pace = useMemo(() => paceFor(course, tasks), [course, tasks])
 
   function openNewTask() {
     setEditingTask(null)
@@ -123,6 +135,17 @@ export default function CourseDetail({
                 .filter(Boolean)
                 .join(' · ')}
             </p>
+            {pace && (
+              <p
+                className={`mt-1 text-sm ${
+                  pace.overdue ? 'text-danger' : 'text-ink-soft'
+                }`}
+              >
+                {pace.overdue
+                  ? `Ziel ${shortDate(pace.targetDate)} überfällig`
+                  : `≈ ${formatDuration(pace.minutesPerDay)}/Tag bis ${shortDate(pace.targetDate)}`}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button
