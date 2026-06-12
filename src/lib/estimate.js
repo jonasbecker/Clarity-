@@ -78,3 +78,36 @@ export function hasEstimateBasis(title, courseId, tasks = []) {
     (t) => t.done && Number(t.actual_min) > 0 && normalizeTitle(t.title) === key,
   )
 }
+
+// Erledigte Tasks mit erfasster Ist-Zeit, die als Tag die angegebene
+// Kategorie tragen (case-insensitiv) — Grundlage für die kategorie-basierte
+// Lernschätzung (greift auch, wenn der Titel der neuen Aufgabe anders ist).
+function doneWithCategory(category, tasks) {
+  const key = String(category || '').toLowerCase()
+  if (!key) return []
+  return tasks.filter(
+    (t) =>
+      t.done &&
+      Number(t.actual_min) > 0 &&
+      Array.isArray(t.tags) &&
+      t.tags.some((tag) => String(tag).toLowerCase() === key),
+  )
+}
+
+// Schätzt die Dauer (Minuten) aus den Ist-Zeiten bisheriger Aufgaben
+// derselben Kategorie (z.B. "Rechenaufgabe") — unabhängig vom Titel.
+// Vorgehen wie bei estimateMinutes: bevorzugt gleicher Kurs, sonst alle.
+export function estimateMinutesByCategory(category, courseId, tasks = [], fallback = DEFAULT_DURATION) {
+  const done = doneWithCategory(category, tasks)
+  if (done.length === 0) return fallback
+
+  const sameCourse = courseId ? done.filter((t) => t.course_id === courseId) : []
+  const pool = sameCourse.length > 0 ? sameCourse : done
+
+  return round5(median(pool.map((t) => Number(t.actual_min))))
+}
+
+// Gibt es Vergleichsdaten für diese Kategorie?
+export function hasCategoryEstimateBasis(category, courseId, tasks = []) {
+  return doneWithCategory(category, tasks).length > 0
+}

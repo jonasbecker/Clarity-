@@ -25,6 +25,7 @@ export function useTaskAnalysis() {
         duration_min: data.duration_min ?? fallback.duration_min,
         priority: data.priority ?? fallback.priority,
         kind: data.kind ?? fallback.kind,
+        category: data.category ?? fallback.category,
         summary: data.summary || fallback.summary,
         source: 'ki',
       }
