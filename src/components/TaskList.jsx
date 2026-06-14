@@ -6,6 +6,7 @@ import CompletedTasks from './CompletedTasks.jsx'
 import { SkeletonRow } from './Skeleton.jsx'
 import { isOverdue, toISODate } from '../lib/date.js'
 import { allTags } from '../lib/tags.js'
+import { EVENT_TYPES } from '../lib/operators.js'
 
 // Liste der Tasks: Suche + Filter oben (Überfällig, Tags, Kurse), danach EINE
 // nach Dringlichkeit sortierte Liste der offenen Tasks (überfällige zuerst),
@@ -30,6 +31,7 @@ export default function TaskList({
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [tagFilter, setTagFilter] = useState(null) // aktiver Tag oder null
   const [courseFilter, setCourseFilter] = useState(null) // aktiver Kurs oder null
+  const [eventTypeFilter, setEventTypeFilter] = useState(null) // aktive Veranstaltungsart oder null
 
   // Kurse als Map (id → Kurs) für schnelle Anzeige in den Karten.
   const courseById = new Map(courses.map((c) => [c.id, c]))
@@ -39,12 +41,27 @@ export default function TaskList({
     if (focusCourse?.id) setCourseFilter(focusCourse.id)
   }, [focusCourse])
 
-  // Alle vorkommenden Tags für die Filter-Leiste.
-  const tags = allTags(tasks)
+  // Alle vorkommenden Tags für die Filter-Leiste — Veranstaltungsarten
+  // (eigene Filterzeile, siehe unten) werden hier ausgeblendet, damit sie
+  // nicht doppelt erscheinen.
+  const tags = allTags(tasks).filter(
+    (t) => !EVENT_TYPES.some((e) => e.toLowerCase() === t.toLowerCase()),
+  )
   // Verschwindet der aktive Tag (z.B. letzte Task gelöscht), Filter lösen.
   useEffect(() => {
     if (tagFilter && !tags.includes(tagFilter)) setTagFilter(null)
   }, [tags, tagFilter])
+
+  // Veranstaltungsarten, die in den aktuellen Tasks als Tag vorkommen — nur
+  // die zeigen wir als eigene Filterzeile (analog zu den Kurs-Chips).
+  const usedEventTypes = EVENT_TYPES.filter((e) =>
+    tasks.some((t) => (t.tags || []).some((tag) => tag.toLowerCase() === e.toLowerCase())),
+  )
+  // Aktiven Veranstaltungsart-Filter lösen, wenn sie nicht mehr vorkommt.
+  useEffect(() => {
+    if (eventTypeFilter && !usedEventTypes.includes(eventTypeFilter)) setEventTypeFilter(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTypeFilter, tasks])
 
   // Kurse, die in den aktuellen Tasks vorkommen — nur die zeigen wir als
   // Filter-Chips (analog zu den Tags).
@@ -66,12 +83,21 @@ export default function TaskList({
   }, [overdueOnly, overdueCount])
 
   const hasFilters =
-    query.trim() !== '' || overdueOnly || tagFilter != null || courseFilter != null
+    query.trim() !== '' ||
+    overdueOnly ||
+    tagFilter != null ||
+    courseFilter != null ||
+    eventTypeFilter != null
   const q = query.trim().toLowerCase()
   const filtered = tasks.filter((t) => {
     if (overdueOnly && (t.done || !isOverdue(t.due_date))) return false
     if (tagFilter && !(t.tags || []).includes(tagFilter)) return false
     if (courseFilter && t.course_id !== courseFilter) return false
+    if (
+      eventTypeFilter &&
+      !(t.tags || []).some((tag) => tag.toLowerCase() === eventTypeFilter.toLowerCase())
+    )
+      return false
     if (
       q &&
       !t.title.toLowerCase().includes(q) &&
@@ -178,6 +204,29 @@ export default function TaskList({
                       }`}
                     >
                       #{t}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Veranstaltungsart-Filter: eigene Zeile, nur wenn vorhanden. */}
+            {usedEventTypes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {usedEventTypes.map((e) => {
+                  const active = eventTypeFilter === e
+                  return (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setEventTypeFilter(active ? null : e)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        active
+                          ? 'border-ink bg-ink text-canvas'
+                          : 'border-line text-ink-soft hover:border-ink/30'
+                      }`}
+                    >
+                      {e}
                     </button>
                   )
                 })}
