@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Archive as ArchiveIcon,
   CalendarDays,
   GraduationCap,
   Timer,
@@ -81,10 +80,9 @@ export default function AppShell({ session }) {
   useAppBadge(badgeCount)
 
   const navItems = [
-    { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
+    { id: 'hub', label: 'Studium', icon: GraduationCap },
     { id: 'env', label: 'Lernen', icon: Timer },
-    { id: 'archive', label: 'Archiv', icon: ArchiveIcon },
   ]
 
   // „Semester abschließen": alle aktuell aktiven Kurse ins Archiv verschieben.
