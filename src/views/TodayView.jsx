@@ -10,8 +10,6 @@ import FocusMode from '../components/FocusMode.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import HoursModal from '../components/HoursModal.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
-import { Sparkles } from 'lucide-react'
-import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
 import { useDayPlan } from '../lib/useDayPlan.js'
 import { usePlanOrder } from '../lib/usePlanOrder.js'
@@ -55,7 +53,6 @@ export default function TodayView({
   focusCourse,
   calendar,
 }) {
-  const ai = useAiPlan()
   const aiWeek = useAiWeek()
   const dayPlan = useDayPlan()
   const planOrder = usePlanOrder()
@@ -67,6 +64,8 @@ export default function TodayView({
   const [focusOpen, setFocusOpen] = useState(false)
   // Tages-Pop-up: ob das Zeitbudget-Modal offen ist (KI-Planung).
   const [hoursModalOpen, setHoursModalOpen] = useState(false)
+  // Tagesplan-Ansicht: 'today' | 'week' (Umschalter sitzt im Header).
+  const [dayView, setDayView] = useState('today')
   // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
   // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
   // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
@@ -90,17 +89,8 @@ export default function TodayView({
     0,
   )
 
-  // „Fokus heute": KI-Reihenfolge wenn vorhanden, sonst die Heuristik.
-  const aiFocus =
-    ai.status === 'ready' && ai.plan?.focus?.length
-      ? ai.plan.focus
-          .map((f) => {
-            const t = plannedOpen.find((x) => x.id === f.id)
-            return t ? { ...t, reason: f.reason } : null
-          })
-          .filter(Boolean)
-      : null
-  const focus = aiFocus ?? selectFocusTasks(plannedOpen)
+  // „Fokus heute": Heuristik-Auswahl der wichtigsten offenen Aufgaben.
+  const focus = selectFocusTasks(plannedOpen)
   const stats = weekStats(tasks)
 
   // Tagesfortschritt: heute eingeplante Aufgaben (erledigt / gesamt).
@@ -125,12 +115,7 @@ export default function TodayView({
   // in genau der geplanten Reihenfolge durchgehen. Fällt der Plan leer aus
   // (außerhalb der Arbeitszeit o.ä.), nehmen wir die "Fokus heute"-Auswahl.
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
-  const { ordered: orderedPlan } = orderedPlanTasks(
-    plannedOpen,
-    ai.plan,
-    ai.status,
-    planOrder.order,
-  )
+  const { ordered: orderedPlan } = orderedPlanTasks(plannedOpen, planOrder.order)
   // Heutiges Arbeitszeit-Fenster (oder arbeitsfrei → leerer Plan, dann greift
   // die „Fokus heute"-Auswahl).
   const todayWin = planPrefs.windowForWeekday?.(new Date().getDay()) ?? {
@@ -247,21 +232,10 @@ export default function TodayView({
         name={user.name}
         progress={loading ? null : todayProgress}
         weekly={loading ? null : { total: stats.total, streak: stats.streak }}
+        onPlanDay={!loading && !dayComplete ? () => setHoursModalOpen(true) : null}
+        dayView={dayView}
+        onDayViewChange={!loading && !dayComplete ? setDayView : null}
       />
-
-      {/* Tages-Planung: KI/Heuristik füllt „Heute" anhand deiner Zeit. */}
-      {!loading && !dayComplete && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setHoursModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-medium text-canvas transition-transform active:scale-95"
-          >
-            <Sparkles size={15} />
-            KI-Planung
-          </button>
-        </div>
-      )}
 
       {dayComplete ? (
         <DoneToday count={plannedDone.length} minutes={focusedMin} />
@@ -273,10 +247,9 @@ export default function TodayView({
           calendarStatus={calendar.status}
           onToggle={toggleTask}
           prefs={planPrefs}
-          ai={ai}
           aiWeek={aiWeek}
-          onOptimize={() => ai.generate({ tasks: plannedOpen, events: todayEvents })}
           planOrder={planOrder}
+          dayView={dayView}
         />
       )}
 

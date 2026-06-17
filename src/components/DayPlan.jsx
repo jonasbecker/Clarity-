@@ -45,15 +45,13 @@ export default function DayPlan({
   calendarStatus,
   onToggle,
   prefs,
-  ai,
   aiWeek,
-  onOptimize,
   planOrder,
+  dayView,
   dayCount = 5,
 }) {
-  const aiLoading = ai.status === 'loading'
   const aiWeekLoading = aiWeek?.status === 'loading'
-  const [view, setView] = useState('today') // 'today' | 'week'
+  const view = dayView
   const [draggedId, setDraggedId] = useState(null)
   const { open, toggle } = useCollapsible('dayplan', true)
 
@@ -74,14 +72,9 @@ export default function DayPlan({
   const dayWindows = Array.from({ length: dayCount }, (_, d) => windowForOffset(d))
   const todayWindow = dayWindows[0] // Fenster für heute (oder null = frei)
 
-  // Reihenfolge: KI/Heuristik, überschrieben von deiner manuellen Reihenfolge.
+  // Reihenfolge: Dringlichkeit, überschrieben von deiner manuellen Reihenfolge.
   // Geteilte Logik mit dem Fokus-Modus (lib/planTasks.js).
-  const { ordered, aiActive } = orderedPlanTasks(
-    tasks,
-    ai.plan,
-    ai.status,
-    planOrder.order,
-  )
+  const { ordered } = orderedPlanTasks(tasks, planOrder.order)
   const manual = Boolean(planOrder.order)
 
   // ids der Task-Reihenfolge — Basis fürs Umsortieren (global, auch über Tage).
@@ -141,32 +134,15 @@ export default function DayPlan({
         open={open}
         onToggle={toggle}
         aside={
-          tasks.length > 0 ? (
-            <span className="inline-flex items-center gap-2">
-              {manual && (
-                <button
-                  type="button"
-                  onClick={planOrder.reset}
-                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
-                >
-                  <RotateCcw size={12} />
-                  Auto
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onOptimize}
-                disabled={aiLoading}
-                className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium transition-colors hover:border-ink/30 disabled:opacity-50"
-              >
-                {aiLoading ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <Sparkles size={12} className="text-area-study" />
-                )}
-                {aiLoading ? 'Plant …' : aiActive ? 'KI-optimiert' : 'Mit KI optimieren'}
-              </button>
-            </span>
+          manual ? (
+            <button
+              type="button"
+              onClick={planOrder.reset}
+              className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+            >
+              <RotateCcw size={12} />
+              Auto
+            </button>
           ) : null
         }
       >
@@ -175,29 +151,6 @@ export default function DayPlan({
 
       {open && (
         <>
-          {/* Ansicht-Umschalter Heute/Woche */}
-          <div className="mb-3 flex justify-end">
-            <div className="inline-flex rounded-full border border-line p-0.5">
-              {[
-                { id: 'today', label: 'Heute' },
-                { id: 'week', label: 'Woche' },
-              ].map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setView(v.id)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    view === v.id ? 'bg-ink text-canvas' : 'text-ink-soft hover:text-ink'
-                  }`}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
-
           {view === 'today' ? (
             !todayWindow ? (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface p-8 text-center text-sm text-ink-soft">
