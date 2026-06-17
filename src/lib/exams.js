@@ -29,8 +29,3 @@ export function upcomingExams(tasks, courses = []) {
     }))
     .sort((a, b) => a.days - b.days)
 }
-
-// Offene Klausuren OHNE Datum (kein Countdown möglich) — separat behandelt.
-export function undatedExams(tasks) {
-  return tasks.filter((t) => isExam(t) && !t.done && !t.due_date)
-}

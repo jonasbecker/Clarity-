@@ -102,7 +102,6 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
   Tasks für heute fällig oder überfällig sind (höchstens einmal pro Tag).
 - **Wochenrückblick**: zeigt, wie viele Tasks die letzten 7 Tage erledigt
   wurden — pro Bereich und als Streak.
-- **Suche & Filter**: Tasks per Stichwort oder Bereich filtern.
 - **Rückgängig**: gelöschte Tasks lassen sich kurz danach per Toast
   wiederherstellen.
 - **Onboarding**: beim allerersten Start zeigt Clarity eine kurze,
@@ -203,8 +202,8 @@ deinen Kalender-Terminen, innerhalb deines Arbeitszeit-Fensters.
 - **Überfällig**: gibt es überfällige offene Tasks, erscheint ein Filter-Chip
   „Überfällig (n)"; überfällige Zeilen werden zusätzlich rot markiert und nach
   oben sortiert.
-- **Tastatur-Shortcuts**: `n` neue Task, `/` Suche fokussieren, `f`
-  Fokus-Modus — greifen nicht, während du in einem Eingabefeld tippst.
+- **Tastatur-Shortcuts**: `n` neue Task, `f` Fokus-Modus — greifen nicht,
+  während du in einem Eingabefeld tippst.
 - **Statistik**: ein Knopf im Header (Balkendiagramm-Icon) öffnet eine
   Vollbild-Übersicht deiner erledigten Tasks — Gesamtzahl, Ø pro Woche,
   aktuelle Serie, Verteilung nach Bereich, Tageszeit und Wochentag sowie ein

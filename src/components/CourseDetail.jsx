@@ -12,6 +12,7 @@ import {
   Sparkles,
   Archive,
   ArchiveRestore,
+  Layers,
 } from 'lucide-react'
 import KanbanBoard from './KanbanBoard.jsx'
 import TaskModal from './TaskModal.jsx'
@@ -22,7 +23,6 @@ import { formatDuration } from '../lib/scheduler.js'
 import { buildSeries, seriesCount } from '../lib/series.js'
 import { estimateMinutes, hasEstimateBasis } from '../lib/estimate.js'
 import { paceFor } from '../lib/pace.js'
-import { Layers } from 'lucide-react'
 
 const TABS = [
   { id: 'inhalt', label: 'Inhalt' },

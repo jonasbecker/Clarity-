@@ -6,7 +6,7 @@
 // `buildSplitTasks` baut daraus fertige Task-Feld-Objekte (wie `addTask` sie
 // erwartet). Das tatsächliche Anlegen übernimmt der Aufrufer.
 
-export const MAX_CHUNK = 120 // hartes Limit je Aufgaben-Brocken (Minuten)
+const MAX_CHUNK = 120 // hartes Limit je Aufgaben-Brocken (Minuten)
 
 // Zerlegt `min` Minuten in Brocken à höchstens MAX_CHUNK. Beispiel:
 //   300 → [120, 120, 60]   90 → [90]   240 → [120, 120]

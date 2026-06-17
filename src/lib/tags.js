@@ -19,15 +19,3 @@ export function addTag(tags, label) {
 export function removeTag(tags, label) {
   return tags.filter((t) => t !== label)
 }
-
-// Alle in den Tasks vorkommenden Tags, alphabetisch, ohne Duplikate.
-export function allTags(tasks) {
-  const seen = new Map() // kleingeschrieben → Anzeigeform
-  for (const t of tasks) {
-    for (const tag of Array.isArray(t.tags) ? t.tags : []) {
-      const key = tag.toLowerCase()
-      if (!seen.has(key)) seen.set(key, tag)
-    }
-  }
-  return [...seen.values()].sort((a, b) => a.localeCompare(b, 'de'))
-}
