@@ -1,15 +1,9 @@
 import { useState } from 'react'
-import {
-  Archive as ArchiveIcon,
-  CalendarDays,
-  GraduationCap,
-  Timer,
-} from 'lucide-react'
+import { CalendarDays, GraduationCap, Timer } from 'lucide-react'
 import NavBar from '../components/NavBar.jsx'
 import StudyHub from './StudyHub.jsx'
 import TodayView from './TodayView.jsx'
 import LearningEnv from './LearningEnv.jsx'
-import Archive from './Archive.jsx'
 import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import ActualTimeModal from '../components/ActualTimeModal.jsx'
@@ -75,10 +69,9 @@ export default function AppShell({ session }) {
   useAppBadge(badgeCount)
 
   const navItems = [
-    { id: 'hub', label: 'Studium', icon: GraduationCap },
+    { id: 'hub', label: 'Kurse', icon: GraduationCap },
     { id: 'today', label: 'Heute', icon: CalendarDays },
     { id: 'env', label: 'Lernen', icon: Timer },
-    { id: 'archive', label: 'Archiv', icon: ArchiveIcon },
   ]
 
   // „Semester abschließen": alle aktuell aktiven Kurse ins Archiv verschieben.
@@ -154,6 +147,9 @@ export default function AppShell({ session }) {
           courses={coursesApi.courses}
           onOpenCourse={openCourse}
           onEndSemester={endSemester}
+          onToggleTask={toggleTaskTimed}
+          onEditTask={tasksApi.editTask}
+          onDeleteTask={tasksApi.removeTask}
         />
       )}
 
@@ -183,14 +179,6 @@ export default function AppShell({ session }) {
 
       {view === 'env' && (
         <LearningEnv tasks={tasksApi.tasks} onToggle={toggleTaskTimed} />
-      )}
-
-      {view === 'archive' && (
-        <Archive
-          courses={coursesApi.courses}
-          tasks={tasksApi.tasks}
-          onOpenCourse={openCourse}
-        />
       )}
 
       {detailCourse && (

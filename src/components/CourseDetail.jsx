@@ -10,8 +10,6 @@ import {
   ListTodo,
   ArrowUpRight,
   Sparkles,
-  Archive,
-  ArchiveRestore,
 } from 'lucide-react'
 import KanbanBoard from './KanbanBoard.jsx'
 import TaskModal from './TaskModal.jsx'
@@ -148,17 +146,6 @@ export default function CourseDetail({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() =>
-                onUpdateCourse(course.id, { archived: !course.archived })
-              }
-              aria-label={course.archived ? 'Kurs reaktivieren' : 'Kurs archivieren'}
-              title={course.archived ? 'Reaktivieren' : 'Archivieren'}
-              className="grid size-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface"
-            >
-              {course.archived ? <ArchiveRestore size={17} /> : <Archive size={17} />}
-            </button>
             <button
               type="button"
               onClick={() => onEditMeta(course)}

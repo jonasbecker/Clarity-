@@ -1,8 +1,11 @@
-import { Award, CalendarClock, GraduationCap, Layers, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { Award, CalendarClock, GraduationCap, Layers, Pencil } from 'lucide-react'
 import { getGreeting, formatLongDate, formatDueLabel } from '../lib/date.js'
 import { upcomingExams } from '../lib/exams.js'
 import { formatDuration } from '../lib/scheduler.js'
 import { usePaceCalculator } from '../lib/usePaceCalculator.js'
+import TaskCard from '../components/TaskCard.jsx'
+import TaskModal from '../components/TaskModal.jsx'
 import {
   weightedAverage,
   totalEcts,
@@ -34,18 +37,23 @@ function paceLabel(pace) {
   return `≈ ${formatDuration(pace.minutesPerDay)}/Tag bis ${shortDate(pace.targetDate)}`
 }
 
-// Der Studium-Hub: die neue Startseite. Zeigt Kennzahlen, anstehende
-// Klausuren, eine Kachel-Galerie der aktuellen Kurse und den Notenspiegel.
-// Rein lesend/aggregierend über die bereits geladenen Tasks + Kurse —
-// funktioniert in Demo und mit Supabase. Archivierte Kurse bleiben außen vor.
+// Die Kurse-Übersicht: die neue Startseite. Zeigt Kennzahlen, anstehende
+// Klausuren, alle Kurse mit ihren offenen Aufgaben direkt darunter (kein
+// Antippen nötig) und den Notenspiegel. Rein lesend/aggregierend über die
+// bereits geladenen Tasks + Kurse — funktioniert in Demo und mit Supabase.
+// Kennzahlen/Notenspiegel beziehen sich auf aktive (nicht archivierte) Kurse,
+// die Kurs-Liste selbst zeigt bewusst ALLE Kurse.
 //
-// `onOpenCourse(id)` öffnet einen Kurs (ab Phase 2 die Fach-Detailseite).
+// `onOpenCourse(id)` öffnet die Fach-Detailseite (Bearbeiten, Links, Notizen).
 export default function StudyHub({
   name,
   tasks,
   courses,
   onOpenCourse,
   onEndSemester,
+  onToggleTask,
+  onEditTask,
+  onDeleteTask,
 }) {
   const active = courses.filter((c) => !c.archived)
   const paceByCourse = usePaceCalculator(active, tasks)
@@ -55,15 +63,12 @@ export default function StudyHub({
   const total = totalEcts(active)
   const ectsPct = total > 0 ? Math.round((earned / total) * 100) : 0
   const semesters = bySemester(active)
+  const emptyCourseById = new Map()
 
-  // Offene Tasks je Kurs zählen.
-  const openByCourse = new Map()
-  for (const t of tasks) {
-    if (t.done || !t.course_id) continue
-    openByCourse.set(t.course_id, (openByCourse.get(t.course_id) || 0) + 1)
-  }
+  // Aufgabe direkt aus der Kurs-Liste bearbeiten (ohne erst den Kurs zu öffnen).
+  const [editingTask, setEditingTask] = useState(null)
 
-  const isEmpty = active.length === 0 && exams.length === 0
+  const isEmpty = courses.length === 0 && exams.length === 0
 
   return (
     <main className="mx-auto w-full max-w-3xl px-5 pb-28 pt-6 sm:px-8 sm:pt-10">
@@ -148,60 +153,79 @@ export default function StudyHub({
             </section>
           )}
 
-          {/* Kurs-Galerie */}
-          {active.length > 0 && (
+          {/* Kurse — alle, mit ihren offenen Aufgaben direkt darunter */}
+          {courses.length > 0 && (
             <section className="mb-8">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-ink-soft">Deine Kurse</h2>
-                <button
-                  type="button"
-                  onClick={onEndSemester}
-                  className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
-                >
-                  Semester abschließen
-                </button>
+                {active.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={onEndSemester}
+                    className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30"
+                  >
+                    Semester abschließen
+                  </button>
+                )}
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {active.map((c) => {
-                  const open = openByCourse.get(c.id) || 0
+              <div className="space-y-3">
+                {courses.map((c) => {
+                  const openTasks = tasks.filter((t) => t.course_id === c.id && !t.done)
                   const pace = paceLabel(paceByCourse.get(c.id))
                   return (
-                    <button
+                    <div
                       key={c.id}
-                      type="button"
-                      onClick={() => onOpenCourse?.(c.id)}
-                      className="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-left transition-colors hover:border-ink/30"
+                      className="overflow-hidden rounded-2xl border border-line bg-surface"
                       style={{ borderTop: `3px solid ${c.color || 'var(--color-area-study)'}` }}
                     >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{c.name}</span>
-                        <span className="mt-0.5 block text-xs text-ink-soft">
-                          {[
-                            c.semester,
-                            c.ects != null ? `${c.ects} ECTS` : null,
-                            `Note ${formatGrade(c.grade)}`,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </span>
-                        <span className="mt-1 block text-xs text-ink-soft">
-                          {open > 0 ? `${open} offene Aufgabe${open === 1 ? '' : 'n'}` : 'Keine offenen Aufgaben'}
-                        </span>
-                        {pace && (
-                          <span
-                            className={`mt-1 block text-xs ${
-                              paceByCourse.get(c.id)?.overdue ? 'text-danger' : 'text-ink-soft'
-                            }`}
-                          >
-                            {pace}
+                      <button
+                        type="button"
+                        onClick={() => onOpenCourse?.(c.id)}
+                        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-canvas"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{c.name}</span>
+                          <span className="mt-0.5 block text-xs text-ink-soft">
+                            {[
+                              c.semester,
+                              c.ects != null ? `${c.ects} ECTS` : null,
+                              `Note ${formatGrade(c.grade)}`,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
                           </span>
-                        )}
-                      </span>
-                      <ChevronRight
-                        size={16}
-                        className="shrink-0 text-ink-soft transition-transform group-hover:translate-x-0.5"
-                      />
-                    </button>
+                          {pace && (
+                            <span
+                              className={`mt-1 block text-xs ${
+                                paceByCourse.get(c.id)?.overdue ? 'text-danger' : 'text-ink-soft'
+                              }`}
+                            >
+                              {pace}
+                            </span>
+                          )}
+                        </span>
+                        <Pencil size={15} className="shrink-0 text-ink-soft" aria-hidden="true" />
+                      </button>
+
+                      {openTasks.length > 0 ? (
+                        <div className="divide-y divide-line border-t border-line px-4">
+                          {openTasks.map((t) => (
+                            <TaskCard
+                              key={t.id}
+                              task={t}
+                              onToggle={onToggleTask}
+                              onEdit={setEditingTask}
+                              onDelete={onDeleteTask}
+                              courseById={emptyCourseById}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="border-t border-line px-4 py-3 text-xs text-ink-soft">
+                          Keine offenen Aufgaben
+                        </p>
+                      )}
+                    </div>
                   )
                 })}
               </div>
@@ -236,6 +260,16 @@ export default function StudyHub({
           )}
         </>
       )}
+
+      <TaskModal
+        open={Boolean(editingTask)}
+        task={editingTask}
+        onClose={() => setEditingTask(null)}
+        onSubmit={(fields) => onEditTask(editingTask.id, fields)}
+        onDelete={onDeleteTask}
+        courses={courses}
+        tasks={tasks}
+      />
     </main>
   )
 }
