@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Header from '../components/Header.jsx'
 import DayPlan from '../components/DayPlan.jsx'
 import TaskList from '../components/TaskList.jsx'
@@ -10,7 +10,7 @@ import FocusMode from '../components/FocusMode.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import HoursModal from '../components/HoursModal.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
-import { Sparkles, LifeBuoy } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
@@ -75,7 +75,6 @@ export default function TodayView({
   const [editingCourse, setEditingCourse] = useState(null)
   const [courseFromTask, setCourseFromTask] = useState(false)
   const [coursePick, setCoursePick] = useState(null)
-  const searchInputRef = useRef(null)
 
   const todayISO = toISODate(new Date())
 
@@ -184,7 +183,6 @@ export default function TodayView({
   useKeyboardShortcuts({
     enabled: !modalOpen && !focusOpen && !courseModalOpen,
     onNew: openCreate,
-    onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
   })
   // Speichern: bei vorhandener Task bearbeiten, sonst neu anlegen. Neu im „+"
@@ -261,16 +259,6 @@ export default function TodayView({
             <Sparkles size={15} />
             KI-Planung
           </button>
-          {plannedOpen.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setHoursMode('rescue')}
-              className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30"
-            >
-              <LifeBuoy size={15} />
-              Rette meinen Tag
-            </button>
-          )}
         </div>
       )}
 
@@ -324,7 +312,6 @@ export default function TodayView({
         onToggle={toggleTask}
         onEdit={openEdit}
         onDelete={removeTask}
-        searchInputRef={searchInputRef}
         courses={courses}
         focusCourse={focusCourse}
         onTogglePlan={togglePlan}
@@ -364,17 +351,9 @@ export default function TodayView({
 
       <HoursModal
         open={hoursMode !== null}
-        title={
-          hoursMode === 'rescue'
-            ? 'Rette meinen Tag'
-            : 'Wie viel Zeit hast du heute?'
-        }
-        hint={
-          hoursMode === 'rescue'
-            ? 'Wie viel Zeit hast du noch? Clarity plant „Heute" neu.'
-            : 'Clarity bündelt deine Aufgaben fokussiert in dieses Zeitbudget.'
-        }
-        confirmLabel={hoursMode === 'rescue' ? 'Neu planen' : 'Tag planen'}
+        title="Wie viel Zeit hast du heute?"
+        hint="Clarity bündelt deine Aufgaben fokussiert in dieses Zeitbudget."
+        confirmLabel="Tag planen"
         loading={dayPlan.status === 'loading'}
         onConfirm={runDayPlan}
         onClose={() => setHoursMode(null)}
