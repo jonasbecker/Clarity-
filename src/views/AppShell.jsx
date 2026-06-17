@@ -24,6 +24,7 @@ import { useTasks } from '../lib/useTasks.js'
 import { useCourses } from '../lib/useCourses.js'
 import { usePlanPrefs } from '../lib/usePlanPrefs.js'
 import { useTheme } from '../lib/useTheme.js'
+import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useNotifications } from '../lib/useNotifications.js'
 import { useOnboarding } from '../lib/useOnboarding.js'
 import { useOnline } from '../lib/useOnline.js'
@@ -48,6 +49,9 @@ export default function AppShell({ session }) {
   // die Wochentags-Fenster nutzen kann.
   const planPrefs = usePlanPrefs()
   const { theme, toggle: toggleTheme } = useTheme()
+  // Google-Kalender liegt ebenfalls in der Shell: „Heute" zeigt die Termine,
+  // die Einstellungen bieten den Verbinden-Knopf.
+  const calendar = useGoogleCalendar()
   const notifications = useNotifications(tasksApi.tasks, tasksApi.loading)
   const onboarding = useOnboarding()
   const online = useOnline()
@@ -179,6 +183,7 @@ export default function AppShell({ session }) {
           removeCourse={coursesApi.removeCourse}
           planPrefs={planPrefs}
           focusCourse={courseJump}
+          calendar={calendar}
         />
       )}
 
@@ -229,6 +234,7 @@ export default function AppShell({ session }) {
         <SettingsView
           theme={theme}
           onToggleTheme={toggleTheme}
+          calendar={calendar}
           planPrefs={planPrefs}
           onClose={() => setSettingsOpen(false)}
         />

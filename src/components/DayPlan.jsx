@@ -43,12 +43,10 @@ export default function DayPlan({
   loading,
   eventsByDate,
   calendarStatus,
-  onConnect,
   onToggle,
   prefs,
   ai,
   aiWeek,
-  summary,
   onOptimize,
   planOrder,
   dayCount = 5,
@@ -177,14 +175,6 @@ export default function DayPlan({
 
       {open && (
         <>
-          {/* KI-Tagesüberblick, wenn vorhanden */}
-          {summary && (
-            <div className="mb-3 flex items-start gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
-              <Sparkles size={15} className="mt-0.5 shrink-0 text-area-study" />
-              <p>{summary}</p>
-            </div>
-          )}
-
           {/* Ansicht-Umschalter Heute/Woche */}
           <div className="mb-3 flex justify-end">
             <div className="inline-flex rounded-full border border-line p-0.5">
@@ -278,16 +268,13 @@ export default function DayPlan({
             </>
           )}
 
-          {/* Tipp: echten Kalender verbinden */}
-          {(calendarStatus === 'idle' || calendarStatus === 'error') && (
-            <button
-              type="button"
-              onClick={onConnect}
-              className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
-            >
-              <CalendarPlus size={15} />
-              Google Kalender verbinden, um echte Termine einzuplanen
-            </button>
+          {/* Hinweis: ohne Verbindung läuft ein Demo-Kalender */}
+          {calendarStatus !== 'connected' && (
+            <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
+              <CalendarPlus size={15} className="shrink-0" />
+              Dies ist ein Demo-Kalender. Deinen echten Kalender verbindest du
+              in den Einstellungen.
+            </p>
           )}
         </>
       )}

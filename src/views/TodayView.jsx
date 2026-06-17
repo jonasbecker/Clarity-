@@ -11,7 +11,6 @@ import QuickAdd from '../components/QuickAdd.jsx'
 import HoursModal from '../components/HoursModal.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
 import { Sparkles, LifeBuoy } from 'lucide-react'
-import { useGoogleCalendar } from '../lib/useGoogleCalendar.js'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
 import { useDayPlan } from '../lib/useDayPlan.js'
@@ -54,8 +53,8 @@ export default function TodayView({
   removeCourse,
   planPrefs,
   focusCourse,
+  calendar,
 }) {
-  const calendar = useGoogleCalendar()
   const ai = useAiPlan()
   const aiWeek = useAiWeek()
   const dayPlan = useDayPlan()
@@ -274,14 +273,6 @@ export default function TodayView({
         </div>
       )}
 
-      {/* KI-Tagesüberblick, wenn die Auswahl von der KI kam. */}
-      {dayPlan.result?.summary && (
-        <p className="mb-6 flex items-start gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
-          <Sparkles size={15} className="mt-0.5 shrink-0 text-area-study" />
-          <span>{dayPlan.result.summary}</span>
-        </p>
-      )}
-
       {dayComplete ? (
         <DoneToday count={plannedDone.length} minutes={focusedMin} />
       ) : (
@@ -290,12 +281,10 @@ export default function TodayView({
           loading={loading}
           eventsByDate={eventsByDate}
           calendarStatus={calendar.status}
-          onConnect={calendar.connect}
           onToggle={toggleTask}
           prefs={planPrefs}
           ai={ai}
           aiWeek={aiWeek}
-          summary={ai.status === 'ready' ? ai.plan?.summary : null}
           onOptimize={() => ai.generate({ tasks: plannedOpen, events: todayEvents })}
           planOrder={planOrder}
         />
