@@ -10,7 +10,7 @@ import FocusMode from '../components/FocusMode.jsx'
 import QuickAdd from '../components/QuickAdd.jsx'
 import HoursModal from '../components/HoursModal.jsx'
 import PullToRefresh from '../components/PullToRefresh.jsx'
-import { Sparkles, LifeBuoy } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useAiPlan } from '../lib/useAiPlan.js'
 import { useAiWeek } from '../lib/useAiWeek.js'
 import { useDayPlan } from '../lib/useDayPlan.js'
@@ -65,8 +65,8 @@ export default function TodayView({
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [focusOpen, setFocusOpen] = useState(false)
-  // Tages-Pop-up: null | 'plan' (Morgen-Call) | 'rescue' (Rette meinen Tag).
-  const [hoursMode, setHoursMode] = useState(null)
+  // Tages-Pop-up: ob das Zeitbudget-Modal offen ist (KI-Planung).
+  const [hoursModalOpen, setHoursModalOpen] = useState(false)
   // Kurs-Modal: `editingCourse` null = neu. `courseFromTask` merkt sich, ob
   // das Kurs-Formular aus dem Task-Formular heraus geöffnet wurde (dann den
   // neuen Kurs dort direkt vorauswählen). `coursePick` trägt id + key.
@@ -176,7 +176,7 @@ export default function TodayView({
       tasks: pool,
     })
     planManyForToday(res.ids)
-    setHoursMode(null)
+    setHoursModalOpen(false)
   }
 
   // Tastatur-Shortcuts (nur wenn weder Task- noch Kurs-/Fokus-Modal offen ist).
@@ -254,22 +254,12 @@ export default function TodayView({
         <div className="mb-6 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setHoursMode('plan')}
+            onClick={() => setHoursModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-medium text-canvas transition-transform active:scale-95"
           >
             <Sparkles size={15} />
             KI-Planung
           </button>
-          {plannedOpen.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setHoursMode('rescue')}
-              className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink/30"
-            >
-              <LifeBuoy size={15} />
-              Rette meinen Tag
-            </button>
-          )}
         </div>
       )}
 
@@ -352,21 +342,13 @@ export default function TodayView({
       )}
 
       <HoursModal
-        open={hoursMode !== null}
-        title={
-          hoursMode === 'rescue'
-            ? 'Rette meinen Tag'
-            : 'Wie viel Zeit hast du heute?'
-        }
-        hint={
-          hoursMode === 'rescue'
-            ? 'Wie viel Zeit hast du noch? Clarity plant „Heute" neu.'
-            : 'Clarity bündelt deine Aufgaben fokussiert in dieses Zeitbudget.'
-        }
-        confirmLabel={hoursMode === 'rescue' ? 'Neu planen' : 'Tag planen'}
+        open={hoursModalOpen}
+        title="Wie viel Zeit hast du heute (noch)?"
+        hint="Clarity bündelt deine Aufgaben fokussiert in dieses Zeitbudget."
+        confirmLabel="Tag planen"
         loading={dayPlan.status === 'loading'}
         onConfirm={runDayPlan}
-        onClose={() => setHoursMode(null)}
+        onClose={() => setHoursModalOpen(false)}
       />
     </main>
   )
