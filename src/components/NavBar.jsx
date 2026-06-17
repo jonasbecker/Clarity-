@@ -1,8 +1,8 @@
-import { BarChart3, LogOut, Moon, Sun } from 'lucide-react'
+import { BarChart3, LogOut, Settings } from 'lucide-react'
 
 // Obere Navigationsleiste der App-Shell. Links die Marke, daneben die
 // Bereiche (Studium-Hub, Heute, …), rechts globale Aktionen (Statistik,
-// Hell/Dunkel, Abmelden). Die Bereiche kommen als `items` herein, damit
+// Einstellungen, Abmelden). Die Bereiche kommen als `items` herein, damit
 // spätere Phasen einfach weitere Einträge ergänzen können.
 //
 // `view` ist der aktive Bereich, `onNavigate(id)` wechselt ihn.
@@ -10,9 +10,8 @@ export default function NavBar({
   items,
   view,
   onNavigate,
-  theme,
-  onToggleTheme,
   onOpenStats,
+  onOpenSettings,
   onSignOut,
 }) {
   return (
@@ -58,14 +57,14 @@ export default function NavBar({
               <BarChart3 size={18} />
             </button>
           )}
-          {onToggleTheme && (
+          {onOpenSettings && (
             <button
               type="button"
-              onClick={onToggleTheme}
-              aria-label={theme === 'dark' ? 'Heller Modus' : 'Dunkler Modus'}
+              onClick={onOpenSettings}
+              aria-label="Einstellungen öffnen"
               className="grid size-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface"
             >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <Settings size={18} />
             </button>
           )}
           {onSignOut && (

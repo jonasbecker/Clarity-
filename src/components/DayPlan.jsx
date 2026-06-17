@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 import SectionTitle from './SectionTitle.jsx'
 import { SkeletonLine } from './Skeleton.jsx'
-import WorkHoursEditor from './WorkHoursEditor.jsx'
 import { useCollapsible } from '../lib/useCollapsible.js'
 import { moveInOrder, reorderTo } from '../lib/usePlanOrder.js'
 import { orderedPlanTasks } from '../lib/planTasks.js'
@@ -206,9 +205,6 @@ export default function DayPlan({
               ))}
             </div>
           </div>
-
-          {/* Arbeitszeiten je Wochentag */}
-          <WorkHoursEditor prefs={prefs} />
 
           {ai.error && <p className="mb-3 text-sm text-danger">KI: {ai.error}</p>}
 

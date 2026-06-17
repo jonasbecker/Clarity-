@@ -14,6 +14,7 @@ import CourseDetail from '../components/CourseDetail.jsx'
 import CourseModal from '../components/CourseModal.jsx'
 import ActualTimeModal from '../components/ActualTimeModal.jsx'
 import StatsView from '../components/StatsView.jsx'
+import SettingsView from './SettingsView.jsx'
 import DemoBanner from '../components/DemoBanner.jsx'
 import OfflineBanner from '../components/OfflineBanner.jsx'
 import ReminderBanner from '../components/ReminderBanner.jsx'
@@ -53,6 +54,7 @@ export default function AppShell({ session }) {
 
   const [view, setView] = useState('today')
   const [statsOpen, setStatsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   // Geöffnete Fach-Detailseite (Kurs-id) bzw. Kurs im Bearbeiten-Formular.
   const [detailCourseId, setDetailCourseId] = useState(null)
   const [editingCourse, setEditingCourse] = useState(null)
@@ -131,9 +133,8 @@ export default function AppShell({ session }) {
         items={navItems}
         view={view}
         onNavigate={setView}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         onOpenStats={() => setStatsOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
         onSignOut={isSupabaseConfigured ? () => supabase.auth.signOut() : null}
       />
 
@@ -222,6 +223,15 @@ export default function AppShell({ session }) {
 
       {statsOpen && (
         <StatsView tasks={tasksApi.tasks} onClose={() => setStatsOpen(false)} />
+      )}
+
+      {settingsOpen && (
+        <SettingsView
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          planPrefs={planPrefs}
+          onClose={() => setSettingsOpen(false)}
+        />
       )}
 
       {timingTask && (
