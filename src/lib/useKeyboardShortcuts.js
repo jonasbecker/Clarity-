@@ -2,11 +2,10 @@ import { useEffect } from 'react'
 
 // Globale Tastatur-Shortcuts. Bewusst schlicht gehalten:
 //   n → neue Task erfassen
-//   / → Suchfeld fokussieren
 //   f → Fokus-Modus starten
 // Greift NICHT, während ein Eingabefeld (input/textarea/select/contenteditable)
 // den Fokus hat oder wenn `enabled` false ist (z.B. Modal/Fokus schon offen).
-export function useKeyboardShortcuts({ enabled, onNew, onSearch, onFocus }) {
+export function useKeyboardShortcuts({ enabled, onNew, onFocus }) {
   useEffect(() => {
     if (!enabled) return
 
@@ -27,9 +26,6 @@ export function useKeyboardShortcuts({ enabled, onNew, onSearch, onFocus }) {
       if (e.key === 'n') {
         e.preventDefault()
         onNew?.()
-      } else if (e.key === '/') {
-        e.preventDefault()
-        onSearch?.()
       } else if (e.key === 'f') {
         e.preventDefault()
         onFocus?.()
@@ -38,5 +34,5 @@ export function useKeyboardShortcuts({ enabled, onNew, onSearch, onFocus }) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [enabled, onNew, onSearch, onFocus])
+  }, [enabled, onNew, onFocus])
 }

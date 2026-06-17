@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Header from '../components/Header.jsx'
 import DayPlan from '../components/DayPlan.jsx'
 import TaskList from '../components/TaskList.jsx'
@@ -73,7 +73,6 @@ export default function TodayView({
   const [editingCourse, setEditingCourse] = useState(null)
   const [courseFromTask, setCourseFromTask] = useState(false)
   const [coursePick, setCoursePick] = useState(null)
-  const searchInputRef = useRef(null)
 
   const todayISO = toISODate(new Date())
 
@@ -168,7 +167,6 @@ export default function TodayView({
   useKeyboardShortcuts({
     enabled: !modalOpen && !focusOpen && !courseModalOpen,
     onNew: openCreate,
-    onSearch: () => searchInputRef.current?.focus(),
     onFocus: () => focusQueue.length > 0 && setFocusOpen(true),
   })
   // Speichern: bei vorhandener Task bearbeiten, sonst neu anlegen. Neu im „+"
@@ -276,7 +274,6 @@ export default function TodayView({
         onToggle={toggleTask}
         onEdit={openEdit}
         onDelete={removeTask}
-        searchInputRef={searchInputRef}
         courses={courses}
         focusCourse={focusCourse}
         onTogglePlan={togglePlan}

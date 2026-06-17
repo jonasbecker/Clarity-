@@ -29,9 +29,7 @@ export default function SectionTitle({
       ) : (
         <h2 className="text-base font-semibold tracking-tight">{children}</h2>
       )}
-      {aside != null && (
-        <span className="text-sm text-ink-soft">{aside}</span>
-      )}
+      {aside != null && aside}
     </div>
   )
 }

@@ -25,35 +25,16 @@ export default function Header({
   onDayViewChange,
 }) {
   return (
-    <header className="mb-8 flex items-start justify-between gap-4">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-ink-soft">
-          {formatLongDate()}
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
-          {getGreeting()}, {name}
-        </h1>
-        {progress && (
-          <div className="mt-3 flex items-center gap-3">
-            <ProgressRing done={progress.done} total={progress.total} size={40} stroke={4} />
-            <div className="text-sm text-ink-soft">
-              <p>
-                {progress.total === 0
-                  ? 'Keine Tasks für heute geplant'
-                  : `${progress.done} von ${progress.total} heute erledigt`}
-              </p>
-              {weekly?.total > 0 && (
-                <p className="mt-0.5 text-xs">
-                  Diese Woche {weekly.total} erledigt
-                  {weekly.streak > 1 && <> · 🔥 {weekly.streak} Tage in Folge</>}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+    <header className="mb-8 grid grid-cols-2 items-center gap-x-4 gap-y-2">
+      <p className="col-start-1 row-start-1 text-sm font-medium uppercase tracking-wide text-ink-soft">
+        {formatLongDate()}
+      </p>
 
-      <div className="flex shrink-0 flex-col items-end gap-2">
+      <h1 className="col-start-1 row-start-2 mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
+        {getGreeting()}, {name}
+      </h1>
+
+      <div className="col-start-2 row-start-2 flex justify-end">
         {onPlanDay && (
           <button
             type="button"
@@ -64,6 +45,28 @@ export default function Header({
             KI-Planung
           </button>
         )}
+      </div>
+
+      {progress && (
+        <div className="col-start-1 row-start-3 mt-2 flex items-center gap-3">
+          <ProgressRing done={progress.done} total={progress.total} size={40} stroke={4} />
+          <div className="text-sm text-ink-soft">
+            <p>
+              {progress.total === 0
+                ? 'Keine Tasks für heute geplant'
+                : `${progress.done} von ${progress.total} heute erledigt`}
+            </p>
+            {weekly?.total > 0 && (
+              <p className="mt-0.5 text-xs">
+                Diese Woche {weekly.total} erledigt
+                {weekly.streak > 1 && <> · 🔥 {weekly.streak} Tage in Folge</>}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="col-start-2 row-start-3 flex flex-wrap items-center justify-end gap-2">
         {onDayViewChange && (
           <div className="inline-flex rounded-full border border-line p-0.5">
             {[

@@ -17,7 +17,7 @@ export default function Timeline({
   const list = status === 'connected' ? events : fallbackEvents
 
   // Hinweis rechts neben der Überschrift.
-  const aside =
+  const asideText =
     status === 'connected'
       ? `${events.length} Termine`
       : status === 'unconfigured'
@@ -26,7 +26,9 @@ export default function Timeline({
 
   return (
     <section className="mb-10">
-      <SectionTitle aside={aside}>Dein Tag</SectionTitle>
+      <SectionTitle aside={<span className="text-sm text-ink-soft">{asideText}</span>}>
+        Dein Tag
+      </SectionTitle>
 
       {status === 'idle' || status === 'error' ? (
         <ConnectCard onConnect={onConnect} error={error} />
