@@ -17,7 +17,7 @@ export default function NavBar({
 }) {
   return (
     <nav className="sticky top-0 z-30 border-b border-line bg-canvas/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl items-center gap-2 px-4 py-2 sm:px-6">
+      <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-5 py-2 sm:px-8">
         <span className="mr-1 hidden text-sm font-semibold tracking-tight sm:block">
           Clarity
         </span>
